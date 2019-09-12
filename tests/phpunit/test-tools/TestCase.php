@@ -1,6 +1,6 @@
 <?php
 
-namespace TenUpScaffold;
+namespace LearningCommonsImporter;
 
 use PHPUnit\Framework\TestResult;
 use Text_Template;

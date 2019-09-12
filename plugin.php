@@ -1,34 +1,34 @@
 <?php
 /**
- * Plugin Name: TenUpScaffold
- * Plugin URI:
- * Description:
- * Version:     0.1.0
- * Author:      10up
- * Author URI:  https://10up.com
- * Text Domain: tenup-scaffold
+ * Plugin Name: Learning Commons Importer
+ * Plugin URI: https://github.com/platform-coop-toolkit/learning-commons-importer/
+ * Description: Resource importer for the Platform Co-op Resource Library.
+ * Version: 1.0.0-alpha
+ * Author: Platform Cooperative Development Kit
+ * Author URI:  https://github.com/platform-coop-toolkit/
+ * Text Domain: learning-commons-importer
  * Domain Path: /languages
  *
- * @package TenUpScaffold
+ * @package LearningCommonsImporter
  */
 
 // Useful global constants.
-define( 'TENUP_SCAFFOLD_VERSION', '0.1.0' );
-define( 'TENUP_SCAFFOLD_URL', plugin_dir_url( __FILE__ ) );
-define( 'TENUP_SCAFFOLD_PATH', plugin_dir_path( __FILE__ ) );
-define( 'TENUP_SCAFFOLD_INC', TENUP_SCAFFOLD_PATH . 'includes/' );
+define( 'LEARNING_COMMONS_IMPORTER_VERSION', '1.0.0-alpha' );
+define( 'LEARNING_COMMONS_IMPORTER_URL', plugin_dir_url( __FILE__ ) );
+define( 'LEARNING_COMMONS_IMPORTER_PATH', plugin_dir_path( __FILE__ ) );
+define( 'LEARNING_COMMONS_IMPORTER_INC', LEARNING_COMMONS_IMPORTER_PATH . 'includes/' );
 
 // Include files.
-require_once TENUP_SCAFFOLD_INC . 'functions/core.php';
+require_once LEARNING_COMMONS_IMPORTER_INC . 'functions/core.php';
 
 // Activation/Deactivation.
-register_activation_hook( __FILE__, '\TenUpScaffold\Core\activate' );
-register_deactivation_hook( __FILE__, '\TenUpScaffold\Core\deactivate' );
+register_activation_hook( __FILE__, '\LearningCommonsImporter\Core\activate' );
+register_deactivation_hook( __FILE__, '\LearningCommonsImporter\Core\deactivate' );
 
 // Bootstrap.
-TenUpScaffold\Core\setup();
+LearningCommonsImporter\Core\setup();
 
 // Require Composer autoloader if it exists.
-if ( file_exists( TENUP_SCAFFOLD_PATH . '/vendor/autoload.php' ) ) {
-	require_once TENUP_SCAFFOLD_PATH . 'vendor/autoload.php';
+if ( file_exists( LEARNING_COMMONS_IMPORTER_PATH . '/vendor/autoload.php' ) ) {
+	require_once LEARNING_COMMONS_IMPORTER_PATH . 'vendor/autoload.php';
 }

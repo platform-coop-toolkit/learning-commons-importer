@@ -13,11 +13,13 @@
 ## Getting Started
 
 ### Quick Start
+
 Install 10up's command line tool for scaffolding new projects. You can download it from the [Project Scaffold repository](https://github.com/10up/project-scaffold). Setting up a new plugin is as easy as running `create-10up plugin plugin-name-here` in the terminal!
 
 Browsersync requires a local development URL. This is currently set in the `package.json`, as `proxyUrl`.
 
 ### Direct Install
+
 - Clone the repository
 - Rename folder plugin-scaffold -> your project's name
 - If copying files manually to an existing plugin directory instead of cloning directly from the repository, make sure to include the following files which may be hidden:
@@ -35,10 +37,10 @@ The NPM commands will fail without these files present.
 
 - Do case-sensitive search/replace for the following:
 
-	- TenUpScaffold
-	- TENUP_SCAFFOLD
-	- tenup-scaffold
-	- tenup_scaffold
+	- LearningCommonsImporter
+	- LEARNING_COMMONS_IMPORTER
+	- learning-commons-importer
+	- learning_commons_importer
 
 - `cd` into the plugin folder
 - run `npm run start` to build the front-end assets

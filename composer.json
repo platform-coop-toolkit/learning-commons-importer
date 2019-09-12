@@ -1,10 +1,11 @@
 {
-  "name": "10up/tenup-scaffold",
-  "description": "10up Scaffold",
+  "name": "platform-coop-toolkit/learning-commons-importer",
+  "description": "Resource importer for the Platform Co-op Resource Library.",
+  "license": "BSD-3-Clause",
   "authors": [
     {
-      "name": "Author",
-      "email": "info@10up.com"
+	    "name": "OCAD University",
+	    "email": "platform-coop-development-kit@lists.inclusivedesign.ca"
     }
   ],
   "require": {
@@ -13,7 +14,7 @@
   },
   "autoload": {
     "psr-4": {
-      "TenUpScaffold\\": "includes/classes/"
+      "LearningCommonsImporter\\": "includes/classes/"
     }
   },
   "require-dev": {
