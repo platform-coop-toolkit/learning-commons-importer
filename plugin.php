@@ -28,6 +28,7 @@ register_deactivation_hook( __FILE__, '\LearningCommonsImporter\Core\deactivate'
 // Bootstrap.
 LearningCommonsImporter\Core\setup();
 
+
 // Require Composer autoloader if it exists.
 if ( file_exists( LEARNING_COMMONS_IMPORTER_PATH . '/vendor/autoload.php' ) ) {
 	require_once LEARNING_COMMONS_IMPORTER_PATH . 'vendor/autoload.php';

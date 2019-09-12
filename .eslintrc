@@ -1,3 +1,10 @@
 {
-  "extends": "@10up/eslint-config"
+	"extends": "@10up/eslint-config",
+	"globals": {
+		"_": true,
+		"importUploadSettings": true,
+		"jQuery": true,
+		"plupload": true,
+		"wp": true
+	}
 }
