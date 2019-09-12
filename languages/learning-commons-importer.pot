@@ -1,0 +1,80 @@
+# Copyright (C) 2019 Platform Cooperative Development Kit
+# This file is distributed under the same license as the Learning Commons Importer plugin.
+msgid ""
+msgstr ""
+"Project-Id-Version: Learning Commons Importer 1.0.0-alpha\n"
+"Report-Msgid-Bugs-To: https://github.com/platform-coop-toolkit/learning-commons-importer/issues\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2019-09-12T22:03:27+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.2.0\n"
+"X-Domain: learning-commons-importer\n"
+
+#. Plugin Name of the plugin
+msgid "Learning Commons Importer"
+msgstr ""
+
+#. Plugin URI of the plugin
+msgid "https://github.com/platform-coop-toolkit/learning-commons-importer/"
+msgstr ""
+
+#. Description of the plugin
+msgid "Resource importer for the Platform Co-op Resource Library."
+msgstr ""
+
+#. Author of the plugin
+msgid "Platform Cooperative Development Kit"
+msgstr ""
+
+#. Author URI of the plugin
+msgid "https://github.com/platform-coop-toolkit/"
+msgstr ""
+
+#: includes/classes/ImportUI.php:57
+msgid "Sorry, there has been an error."
+msgstr ""
+
+#: includes/classes/ImportUI.php:63
+msgid "Try Again"
+msgstr ""
+
+#. translators: %s: Path to uploaded file.
+#: includes/classes/ImportUI.php:200
+msgid "The Excel file could not be found at %s. It is likely that this was caused by a permissions problem."
+msgstr ""
+
+#: includes/classes/ImportUI.php:372
+msgid "Could not cache information on the import."
+msgstr ""
+
+#: includes/functions/core.php:67
+msgid "Resources (Excel)"
+msgstr ""
+
+#: includes/functions/core.php:67
+msgid "Import resources from an Excel spreadsheet."
+msgstr ""
+
+#: templates/intro.php:15
+msgid "Step 1: Select Your Files"
+msgstr ""
+
+#: templates/intro.php:16
+msgid "Welcome to the Learning Commons Importer. Let&#8217;s get started importing your resources."
+msgstr ""
+
+#: templates/intro.php:17
+msgid "To get started, simply upload a properly formatted Excel spreadsheet (.xls) to import."
+msgstr ""
+
+#: templates/intro.php:25
+msgid "Already uploaded your Excel file?"
+msgstr ""
+
+#: templates/intro.php:26
+msgid "Select it from the Media Library"
+msgstr ""
