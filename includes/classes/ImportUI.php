@@ -1,6 +1,6 @@
 <?php
 /**
- * Importer functionality.
+ * Importer UI class.
  *
  * @package LearningCommonsImporter
  */
@@ -8,7 +8,7 @@
 namespace LearningCommonsImporter;
 
 /**
- * Class which handles the resource import module.
+ * Class which handles the resource importer UI.
  */
 class ImportUI {
 	/**
@@ -330,7 +330,21 @@ class ImportUI {
 			$this->display_error( $data );
 			return;
 		}
-		echo '<p>[Prepare.]</p>';
+		$worksheet = $data->getActiveSheet();
+
+		echo '<table>' . PHP_EOL;
+		foreach ( $worksheet->getRowIterator() as $row ) {
+			echo '<tr>' . PHP_EOL;
+			$cell_iterator = $row->getCellIterator();
+			$cell_iterator->setIterateOnlyExistingCells( false );
+			foreach ( $cell_iterator as $cell ) {
+				echo '<td>' .
+					esc_attr( $cell->getValue() ) .
+					'</td>' . PHP_EOL;
+			}
+			echo '</tr>' . PHP_EOL;
+		}
+		echo '</table>' . PHP_EOL;
 	}
 
 	/**
@@ -374,9 +388,17 @@ class ImportUI {
 			);
 		}
 
-		$this->authors = $data->users;
-		$this->version = $data->version;
-
 		return $data;
+	}
+
+	/**
+	 * Get the importer instance.
+	 *
+	 * @return WXR_Importer
+	 */
+	protected function get_importer() {
+		$importer = new Importer();
+
+		return $importer;
 	}
 }
