@@ -353,12 +353,35 @@ class ImportUI {
 					if ( $c >= 1 && $c < 41 && ! in_array( $c, [ 12, 13, 14 ], true ) ) {
 						$val = $cell->getValue();
 						if ( $val ) {
-							if ( ( 1900 <= intval( $val ) ) && ( intval( $val ) <= 2100 ) ) {
-								$resources[ $r ][ $headings[ $c ] ] = intval( $val );
-							} elseif ( Date::isDateTime( $cell ) ) {
-								$resources[ $r ][ $headings[ $c ] ] = Date::excelToDateTimeObject( $val )->format( 'Y-m-d' );
-							} else {
-								$resources[ $r ][ $headings[ $c ] ] = mb_convert_encoding( $val, 'Windows-1252', 'UTF-8' );
+							switch ( $headings[ $c ] ) {
+								case 'Author':
+									$val = explode( '; ', $val );
+									if ( ! is_array( $val ) ) {
+										$val = [ $val ];
+									}
+									foreach ( $val as $v ) {
+										$parts                                = explode( ', ', $v );
+										$name                                 = $parts[1] . ' ' . $parts[0];
+										$resources[ $r ][ $headings[ $c ] ][] = mb_convert_encoding( $name, 'Windows-1252', 'UTF-8' );
+									}
+									break;
+								case 'Manual Tags':
+								case 'Automatic Tags':
+									$val = explode( '; ', $val );
+									if ( ! is_array( $val ) ) {
+										$val = [ $val ];
+									}
+									foreach ( $val as $v ) {
+										$resources[ $r ]['Topics'][] = ucwords( mb_convert_encoding( $v, 'Windows-1252', 'UTF-8' ) );
+									}
+									break;
+								default:
+									if ( Date::isDateTime( $cell ) ) {
+										$resources[ $r ][ $headings[ $c ] ] = Date::excelToDateTimeObject( $val )->format( 'Y-m-d' );
+									} else {
+										$resources[ $r ][ $headings[ $c ] ] = mb_convert_encoding( $val, 'Windows-1252', 'UTF-8' );
+									}
+									break;
 							}
 						}
 					}
@@ -369,7 +392,7 @@ class ImportUI {
 			$r++;
 		}
 
-		echo '<pre>' . esc_attr( print_r( $resources, true ) ) . '</pre>';
+		echo '<pre>' . esc_attr( print_r( $resources, true ) ) . '</pre>'; // @codingStandardsIgnoreLine
 	}
 
 	/**
