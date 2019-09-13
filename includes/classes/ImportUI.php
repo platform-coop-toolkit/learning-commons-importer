@@ -7,6 +7,8 @@
 
 namespace LearningCommonsImporter;
 
+use \PhpOffice\PhpSpreadsheet\Calculation\Functions;
+use \PhpOffice\PhpSpreadsheet\Shared\Date;
 /**
  * Class which handles the resource importer UI.
  */
@@ -332,19 +334,42 @@ class ImportUI {
 		}
 		$worksheet = $data->getActiveSheet();
 
-		echo '<table>' . PHP_EOL;
+		$headings  = [];
+		$resources = [];
+
+		$r = 0;
 		foreach ( $worksheet->getRowIterator() as $row ) {
-			echo '<tr>' . PHP_EOL;
-			$cell_iterator = $row->getCellIterator();
-			$cell_iterator->setIterateOnlyExistingCells( false );
-			foreach ( $cell_iterator as $cell ) {
-				echo '<td>' .
-					esc_attr( $cell->getValue() ) .
-					'</td>' . PHP_EOL;
+			if ( 0 === $r ) {
+				$cell_iterator = $row->getCellIterator();
+				$cell_iterator->setIterateOnlyExistingCells( false );
+				foreach ( $cell_iterator as $cell ) {
+					$headings[] = mb_convert_encoding( $cell->getValue(), 'Windows-1252', 'UTF-8' );
+				}
+			} else {
+				$cell_iterator = $row->getCellIterator();
+				$cell_iterator->setIterateOnlyExistingCells( false );
+				$c = 0;
+				foreach ( $cell_iterator as $cell ) {
+					if ( $c >= 1 && $c < 41 && ! in_array( $c, [ 12, 13, 14 ], true ) ) {
+						$val = $cell->getValue();
+						if ( $val ) {
+							if ( ( 1900 <= intval( $val ) ) && ( intval( $val ) <= 2100 ) ) {
+								$resources[ $r ][ $headings[ $c ] ] = intval( $val );
+							} elseif ( Date::isDateTime( $cell ) ) {
+								$resources[ $r ][ $headings[ $c ] ] = Date::excelToDateTimeObject( $val )->format( 'Y-m-d' );
+							} else {
+								$resources[ $r ][ $headings[ $c ] ] = mb_convert_encoding( $val, 'Windows-1252', 'UTF-8' );
+							}
+						}
+					}
+
+					$c++;
+				}
 			}
-			echo '</tr>' . PHP_EOL;
+			$r++;
 		}
-		echo '</table>' . PHP_EOL;
+
+		echo '<pre>' . esc_attr( print_r( $resources, true ) ) . '</pre>';
 	}
 
 	/**
