@@ -6,7 +6,9 @@ module.exports = {
 		// JS files.
 		'admin': './assets/js/admin/admin.js',
 		'frontend': './assets/js/frontend/frontend.js',
+		'import': './assets/js/admin/import.js',
 		'shared': './assets/js/shared/shared.js',
+		'upload': './assets/js/admin/upload.js',
 
 		// CSS files.
 		'admin-style': './assets/css/admin/admin-style.css',

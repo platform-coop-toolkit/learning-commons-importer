@@ -7,8 +7,6 @@
 
 namespace LearningCommonsImporter;
 
-use \PhpOffice\PhpSpreadsheet\Calculation\Functions;
-use \PhpOffice\PhpSpreadsheet\Shared\Date;
 /**
  * Class which handles the resource importer UI.
  */
@@ -135,7 +133,7 @@ class ImportUI {
 			$error  = '<div class="error inline"><p>';
 			$error .= esc_html__(
 				'Before you can upload your import file, you will need to fix the following error:',
-				'wordpress-importer'
+				'learning-commons-importer'
 			);
 			$error .= sprintf( '<p><strong>%s</strong></p></div>', $upload_dir['error'] );
 			echo esc_attr( $error );
@@ -143,7 +141,7 @@ class ImportUI {
 		}
 
 		// Queue the JS needed for the page.
-		$url  = LEARNING_COMMONS_IMPORTER_URL . 'dist/js/admin.js';
+		$url  = LEARNING_COMMONS_IMPORTER_URL . 'dist/js/upload.js';
 		$deps = [
 			'wp-backbone',
 			'wp-plupload',
@@ -154,8 +152,8 @@ class ImportUI {
 		wp_plupload_default_settings();
 		$settings = [
 			'l10n'     => [
-				'frameTitle' => esc_html__( 'Select', 'wordpress-importer' ),
-				'buttonText' => esc_html__( 'Import', 'wordpress-importer' ),
+				'frameTitle' => esc_html__( 'Select', 'learning-commons-importer' ),
+				'buttonText' => esc_html__( 'Import', 'learning-commons-importer' ),
 			],
 			'next_url' => wp_nonce_url( $this->get_url( 1 ), 'import-upload' ) . '&id={id}',
 			'plupload' => [
@@ -163,7 +161,7 @@ class ImportUI {
 					'max_file_size' => $max_upload_size . 'b',
 					'mime_types'    => [
 						[
-							'title'      => esc_html__( 'Excel files', 'wordpress-importer' ),
+							'title'      => esc_html__( 'Excel files', 'learning-commons-importer' ),
 							'extensions' => 'xls',
 						],
 					],
@@ -285,7 +283,7 @@ class ImportUI {
 		if ( ! is_numeric( $id ) || intval( $id ) < 1 ) {
 			return new WP_Error(
 				'resource_importer.upload.invalid_id',
-				__( 'Invalid media item ID.', 'wordpress-importer' ),
+				__( 'Invalid media item ID.', 'learning-commons-importer' ),
 				compact( 'id' )
 			);
 		}
@@ -296,7 +294,7 @@ class ImportUI {
 		if ( ! $attachment || 'attachment' !== $attachment->post_type ) {
 			return new WP_Error(
 				'resource_importer.upload.invalid_id',
-				__( 'Invalid media item ID.', 'wordpress-importer' ),
+				__( 'Invalid media item ID.', 'learning-commons-importer' ),
 				compact( 'id', 'attachment' )
 			);
 		}
@@ -304,7 +302,7 @@ class ImportUI {
 		if ( ! current_user_can( 'read_post', $attachment->ID ) ) {
 			return new WP_Error(
 				'resource_importer.upload.sorry_dave',
-				__( 'You cannot access the selected media item.', 'wordpress-importer' ),
+				__( 'You cannot access the selected media item.', 'learning-commons-importer' ),
 				compact( 'id', 'attachment' )
 			);
 		}
@@ -328,78 +326,46 @@ class ImportUI {
 		}
 
 		$data = $this->get_data_for_attachment( $this->id );
+
 		if ( is_wp_error( $data ) ) {
 			$this->display_error( $data );
 			return;
 		}
-		$worksheet = $data->getActiveSheet();
 
-		$headings  = [];
-		$resources = [];
-
-		$r = 0;
-		foreach ( $worksheet->getRowIterator() as $row ) {
-			if ( 0 === $r ) {
-				$cell_iterator = $row->getCellIterator();
-				$cell_iterator->setIterateOnlyExistingCells( false );
-				foreach ( $cell_iterator as $cell ) {
-					$headings[] = mb_convert_encoding( $cell->getValue(), 'Windows-1252', 'UTF-8' );
-				}
-			} else {
-				$cell_iterator = $row->getCellIterator();
-				$cell_iterator->setIterateOnlyExistingCells( false );
-				$c = 0;
-				foreach ( $cell_iterator as $cell ) {
-					if ( $c >= 1 && $c < 41 && ! in_array( $c, [ 12, 13, 14 ], true ) ) {
-						$val = $cell->getValue();
-						if ( $val ) {
-							switch ( $headings[ $c ] ) {
-								case 'Author':
-									$val = explode( '; ', $val );
-									if ( ! is_array( $val ) ) {
-										$val = [ $val ];
-									}
-									foreach ( $val as $v ) {
-										$parts                                = explode( ', ', $v );
-										$name                                 = $parts[1] . ' ' . $parts[0];
-										$resources[ $r ][ $headings[ $c ] ][] = mb_convert_encoding( $name, 'Windows-1252', 'UTF-8' );
-									}
-									break;
-								case 'Manual Tags':
-								case 'Automatic Tags':
-									$val = explode( '; ', $val );
-									if ( ! is_array( $val ) ) {
-										$val = [ $val ];
-									}
-									foreach ( $val as $v ) {
-										$resources[ $r ]['Topics'][] = ucwords( mb_convert_encoding( $v, 'Windows-1252', 'UTF-8' ) );
-									}
-									break;
-								default:
-									if ( Date::isDateTime( $cell ) ) {
-										$resources[ $r ][ $headings[ $c ] ] = Date::excelToDateTimeObject( $val )->format( 'Y-m-d' );
-									} else {
-										$resources[ $r ][ $headings[ $c ] ] = mb_convert_encoding( $val, 'Windows-1252', 'UTF-8' );
-									}
-									break;
-							}
-						}
-					}
-
-					$c++;
-				}
-			}
-			$r++;
-		}
-
-		echo '<pre>' . esc_attr( print_r( $resources, true ) ) . '</pre>'; // @codingStandardsIgnoreLine
+		require LEARNING_COMMONS_IMPORTER_PATH . '/templates/select-options.php';
 	}
 
 	/**
 	 * Render the import page.
 	 */
 	private function display_import_step() {
-		echo '<p>Import page.</p>';
+		$args = wp_unslash( $_POST );
+		if ( ! isset( $args['import_id'] ) ) {
+			// Missing import ID.
+			$error = new \WP_Error( 'resource_importer.import.missing_id', __( 'Missing import file ID from request.', 'resource-importer' ) );
+			$this->display_error( $error );
+			return;
+		}
+
+		// Check the nonce.
+		check_admin_referer( sprintf( 'resource.import:%d', (int) $args['import_id'] ) );
+
+		$this->id = (int) $args['import_id'];
+		$file     = get_attached_file( $this->id );
+
+		// Set our settings
+		$settings = [];
+		update_post_meta( $this->id, '_resource_import_settings', $settings );
+
+		// Time to run the import!
+		set_time_limit( 0 );
+
+		// Ensure we're not buffered.
+		wp_ob_end_flush_all();
+		flush();
+
+		$data = get_post_meta( $this->id, '_resource_import_info', true );
+		require LEARNING_COMMONS_IMPORTER_PATH . '/templates/import.php';
 	}
 
 	/**
