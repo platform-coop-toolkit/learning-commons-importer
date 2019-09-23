@@ -64,7 +64,15 @@ function init() {
  */
 function register_importer() {
 	$GLOBALS['resource_importer'] = new \LearningCommonsImporter\ImportUI();
-	\register_importer( 'learning-commons-resources', __( 'Resources (Excel)', 'learning-commons-importer' ), __( 'Import resources from an Excel spreadsheet.', 'learning-commons-importer' ), [ $GLOBALS['resource_importer'], 'dispatch' ] );
+	\register_importer(
+		'learning-commons-resources',
+		__( 'Resources (Excel)', 'learning-commons-importer' ),
+		__( 'Import resources from an Excel spreadsheet.', 'learning-commons-importer' ),
+		[ $GLOBALS['resource_importer'], 'dispatch' ]
+	);
+
+	add_action( 'load-importer-resources', [ $GLOBALS['resource_importer'], 'on_load' ] );
+	add_action( 'wp_ajax_resource-import', [ $GLOBALS['resource_importer'], 'stream_import' ] );
 }
 
 /**

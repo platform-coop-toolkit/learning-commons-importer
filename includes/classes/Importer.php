@@ -110,51 +110,50 @@ class Importer {
 		return $data;
 	}
 
-	/*
-
+	/* @codingStandardsIgnoreStart
 	$cell_iterator = $row->getCellIterator();
-				$cell_iterator->setIterateOnlyExistingCells( false );
-				$c = 0;
-				foreach ( $cell_iterator as $cell ) {
-					if ( $c >= 1 && $c < 41 && ! in_array( $c, [ 12, 13, 14 ], true ) ) {
-						$val = $cell->getValue();
-						if ( $val ) {
-							switch ( $headings[ $c ] ) {
-								case 'Author':
-									$val = explode( '; ', $val );
-									if ( ! is_array( $val ) ) {
-										$val = [ $val ];
-									}
-									foreach ( $val as $v ) {
-										$parts                                = explode( ', ', $v );
-										$name                                 = $parts[1] . ' ' . $parts[0];
-										$resources[ $r ][ $headings[ $c ] ][] = mb_convert_encoding( $name, 'Windows-1252', 'UTF-8' );
-									}
-									break;
-								case 'Manual Tags':
-								case 'Automatic Tags':
-									$val = explode( '; ', $val );
-									if ( ! is_array( $val ) ) {
-										$val = [ $val ];
-									}
-									foreach ( $val as $v ) {
-										$resources[ $r ]['Topics'][] = ucwords( mb_convert_encoding( $v, 'Windows-1252', 'UTF-8' ) );
-									}
-									break;
-								default:
-									if ( Date::isDateTime( $cell ) ) {
-										$resources[ $r ][ $headings[ $c ] ] = Date::excelToDateTimeObject( $val )->format( 'Y-m-d' );
-									} else {
-										$resources[ $r ][ $headings[ $c ] ] = mb_convert_encoding( $val, 'Windows-1252', 'UTF-8' );
-									}
-									break;
-							}
+	$cell_iterator->setIterateOnlyExistingCells( false );
+	$c = 0;
+	foreach ( $cell_iterator as $cell ) {
+		if ( $c >= 1 && $c < 41 && ! in_array( $c, [ 12, 13, 14 ], true ) ) {
+			$val = $cell->getValue();
+			if ( $val ) {
+				switch ( $headings[ $c ] ) {
+					case 'Author':
+						$val = explode( '; ', $val );
+						if ( ! is_array( $val ) ) {
+							$val = [ $val ];
 						}
-					}
-
-					$c++;
+						foreach ( $val as $v ) {
+							$parts                                = explode( ', ', $v );
+							$name                                 = $parts[1] . ' ' . $parts[0];
+							$resources[ $r ][ $headings[ $c ] ][] = mb_convert_encoding( $name, 'Windows-1252', 'UTF-8' );
+						}
+						break;
+					case 'Manual Tags':
+					case 'Automatic Tags':
+						$val = explode( '; ', $val );
+						if ( ! is_array( $val ) ) {
+							$val = [ $val ];
+						}
+						foreach ( $val as $v ) {
+							$resources[ $r ]['Topics'][] = ucwords( mb_convert_encoding( $v, 'Windows-1252', 'UTF-8' ) );
+						}
+						break;
+					default:
+						if ( Date::isDateTime( $cell ) ) {
+							$resources[ $r ][ $headings[ $c ] ] = Date::excelToDateTimeObject( $val )->format( 'Y-m-d' );
+						} else {
+							$resources[ $r ][ $headings[ $c ] ] = mb_convert_encoding( $val, 'Windows-1252', 'UTF-8' );
+						}
+						break;
 				}
-				*/
+			}
+		}
+
+		$c++;
+	}
+	@codingStandardsIgnoreEnd */
 
 
 	/**
@@ -202,7 +201,7 @@ class Importer {
 		// Log the data as debug info too.
 		$data = $error->get_error_data();
 		if ( ! empty( $data ) ) {
-			$this->logger->debug( var_export( $data, true ) );
+			$this->logger->debug( var_export( $data, true ) ); // @codingStandardsIgnoreLine
 		}
 	}
 
@@ -319,10 +318,15 @@ class Importer {
 							break;
 						case 'Title':
 							$data['post_title'] = $this->convert_string_encoding( $val );
-							$data['post_name']  = '';
+							// TODO: Generate slug.
+							$data['post_name'] = '';
 							break;
 						case 'Publication Title':
-							// TODO: Add a field?
+							// TODO: Add a visible field for this.
+							$meta[] = [
+								'key'   => 'lc_resource_publication_title',
+								'value' => $val,
+							];
 							break;
 						case 'ISBN':
 						case 'ISSN':
@@ -355,12 +359,30 @@ class Importer {
 						case 'Issue':
 						case 'Volume':
 						case 'Number Of Volumes':
+							// Add unused fields in case we want them later.
+							$meta_key = 'lc_resource_' . str_replace( ' ', '_', strtolower( $this->headings[ $c ] ) );
+							$meta[]   = [
+								'key'   => $meta_key,
+								'value' => $val,
+							];
+							break;
 						case 'Short Title':
+							// TODO: Add a visible field for this.
+							$meta[] = [
+								'key'   => 'lc_resource_short_title',
+								'value' => $val,
+							];
+							break;
 						case 'Series':
 						case 'Series Number':
 						case 'Series Text':
 						case 'Series Title':
-							// TODO: Add a field?
+							// Add unused fields in case we want them later.
+							$meta_key = 'lc_resource_' . str_replace( ' ', '_', strtolower( $this->headings[ $c ] ) );
+							$meta[]   = [
+								'key'   => $meta_key,
+								'value' => $val,
+							];
 							break;
 						case 'Publisher':
 							$meta[] = [
@@ -419,25 +441,14 @@ class Importer {
 	 * @param array $terms Post terms.
 	 */
 	protected function process_post( $data, $meta, $terms ) {
-		/**
-		 * Pre-process post data.
-		 *
-		 * @param array $data Post data. (Return empty to skip.)
-		 * @param array $meta Meta data.
-		 * @param array $comments Comments on the post.
-		 * @param array $terms Terms on the post.
-		 */
-		$data = apply_filters( 'wxr_importer.pre_process.post', $data, $meta, $comments, $terms );
 		if ( empty( $data ) ) {
 			return false;
 		}
 
-		$original_id = isset( $data['post_id'] ) ? (int) $data['post_id'] : 0;
-		$parent_id   = isset( $data['post_parent'] ) ? (int) $data['post_parent'] : 0;
-		$author_id   = isset( $data['post_author'] ) ? (int) $data['post_author'] : 0;
+		$hash = md5( $data['post_title'] );
 
 		// Have we already processed this?
-		if ( isset( $this->mapping['post'][ $original_id ] ) ) {
+		if ( isset( $this->mapping['post'][ $hash ] ) ) {
 			return;
 		}
 
@@ -447,6 +458,7 @@ class Importer {
 		if ( ! $post_type_object ) {
 			$this->logger->warning(
 				sprintf(
+					/* Translators: %1$s: The post title. %2$s: The post type. */
 					__( 'Failed to import "%1$s": Invalid post type %2$s', 'learning-commons-importer' ),
 					$data['post_title'],
 					$data['post_type']
@@ -459,88 +471,23 @@ class Importer {
 		if ( $post_exists ) {
 			$this->logger->info(
 				sprintf(
+					/* Translators: %1$s: The post type name. %2$s: The post title. */
 					__( '%1$s "%2$s" already exists.', 'learning-commons-importer' ),
 					$post_type_object->labels->singular_name,
 					$data['post_title']
 				)
 			);
 
-			/**
-			 * Post processing already imported.
-			 *
-			 * @param array $data Raw data imported for the post.
-			 */
-			do_action( 'wxr_importer.process_already_imported.post', $data );
-
-			// Even though this post already exists, new comments might need importing
-			$this->process_comments( $comments, $original_id, $data, $post_exists );
-
 			return false;
 		}
 
-		// Map the parent post, or mark it as one we need to fix
-		$requires_remapping = false;
-		if ( $parent_id ) {
-			if ( isset( $this->mapping['post'][ $parent_id ] ) ) {
-				$data['post_parent'] = $this->mapping['post'][ $parent_id ];
-			} else {
-				$meta[]             = array(
-					'key'   => '_wxr_import_parent',
-					'value' => $parent_id,
-				);
-				$requires_remapping = true;
-
-				$data['post_parent'] = 0;
-			}
-		}
-
-		// Map the author, or mark it as one we need to fix
-		$author = sanitize_user( $data['post_author'], true );
-		if ( empty( $author ) ) {
-			// Missing or invalid author, use default if available.
-			$data['post_author'] = $this->options['default_author'];
-		} elseif ( isset( $this->mapping['user_slug'][ $author ] ) ) {
-			$data['post_author'] = $this->mapping['user_slug'][ $author ];
-		} else {
-			$meta[]             = array(
-				'key'   => '_wxr_import_user_slug',
-				'value' => $author,
-			);
-			$requires_remapping = true;
-
-			$data['post_author'] = (int) get_current_user_id();
-		}
-
-		// Does the post look like it contains attachment images?
-		if ( preg_match( self::REGEX_HAS_ATTACHMENT_REFS, $data['post_content'] ) ) {
-			$meta[]             = array(
-				'key'   => '_wxr_import_has_attachment_refs',
-				'value' => true,
-			);
-			$requires_remapping = true;
-		}
-
 		// Whitelist to just the keys we allow
-		$postdata = array(
-			'import_id' => $data['post_id'],
-		);
-		$allowed  = array(
-			'post_author'    => true,
-			'post_date'      => true,
-			'post_date_gmt'  => true,
-			'post_content'   => true,
-			'post_excerpt'   => true,
-			'post_title'     => true,
-			'post_status'    => true,
-			'post_name'      => true,
-			'comment_status' => true,
-			'ping_status'    => true,
-			'guid'           => true,
-			'post_parent'    => true,
-			'menu_order'     => true,
-			'post_type'      => true,
-			'post_password'  => true,
-		);
+		$allowed = [
+			'post_content' => true,
+			'post_title'   => true,
+			'post_status'  => true,
+			'post_type'    => true,
+		];
 		foreach ( $data as $key => $value ) {
 			if ( ! isset( $allowed[ $key ] ) ) {
 				continue;
@@ -551,33 +498,12 @@ class Importer {
 
 		$postdata = apply_filters( 'wp_import_post_data_processed', $postdata, $data );
 
-		if ( 'attachment' === $postdata['post_type'] ) {
-			if ( ! $this->options['fetch_attachments'] ) {
-				$this->logger->notice(
-					sprintf(
-						__( 'Skipping attachment "%s", fetching attachments disabled' ),
-						$data['post_title']
-					)
-				);
-				/**
-				 * Post processing skipped.
-				 *
-				 * @param array $data Raw data imported for the post.
-				 * @param array $meta Raw meta data, already processed by {@see process_post_meta}.
-				 */
-				do_action( 'wxr_importer.process_skipped.post', $data, $meta );
-				return false;
-			}
-			$remote_url = ! empty( $data['attachment_url'] ) ? $data['attachment_url'] : $data['guid'];
-			$post_id    = $this->process_attachment( $postdata, $meta, $remote_url );
-		} else {
-			$post_id = wp_insert_post( $postdata, true );
-			do_action( 'wp_import_insert_post', $post_id, $original_id, $postdata, $data );
-		}
+		$post_id = wp_insert_post( $postdata, true );
 
 		if ( is_wp_error( $post_id ) ) {
 			$this->logger->error(
 				sprintf(
+					/* Translators: %1$s: The post title. %2$s: The post type. */
 					__( 'Failed to import "%1$s" (%2$s)', 'learning-commons-importer' ),
 					$data['post_title'],
 					$post_type_object->labels->singular_name
@@ -585,43 +511,17 @@ class Importer {
 			);
 			$this->logger->debug( $post_id->get_error_message() );
 
-			/**
-			 * Post processing failed.
-			 *
-			 * @param WP_Error $post_id Error object.
-			 * @param array $data Raw data imported for the post.
-			 * @param array $meta Raw meta data, already processed by {@see process_post_meta}.
-			 * @param array $comments Raw comment data, already processed by {@see process_comments}.
-			 * @param array $terms Raw term data, already processed.
-			 */
-			do_action( 'wxr_importer.process_failed.post', $post_id, $data, $meta, $comments, $terms );
 			return false;
 		}
 
-		// Ensure stickiness is handled correctly too
-		if ( $data['is_sticky'] === '1' ) {
-			stick_post( $post_id );
-		}
-
-		// map pre-import ID to local ID
-		$this->mapping['post'][ $original_id ] = (int) $post_id;
-		if ( $requires_remapping ) {
-			$this->requires_remapping['post'][ $post_id ] = true;
-		}
 		$this->mark_post_exists( $data, $post_id );
 
 		$this->logger->info(
 			sprintf(
+				/* Translators: %1$s: The post title. %2$s: The post type. */
 				__( 'Imported "%1$s" (%2$s)', 'learning-commons-importer' ),
 				$data['post_title'],
 				$post_type_object->labels->singular_name
-			)
-		);
-		$this->logger->debug(
-			sprintf(
-				__( 'Post %1$d remapped to %2$d', 'learning-commons-importer' ),
-				$original_id,
-				$post_id
 			)
 		);
 
@@ -638,7 +538,7 @@ class Importer {
 					$term_ids[ $taxonomy ][] = (int) $this->mapping['term'][ $key ];
 				} else {
 					$meta[]             = array(
-						'key'   => '_wxr_import_term',
+						'key'   => '_resource_import_term',
 						'value' => $term,
 					);
 					$requires_remapping = true;
@@ -651,24 +551,7 @@ class Importer {
 			}
 		}
 
-		$this->process_comments( $comments, $post_id, $data );
 		$this->process_post_meta( $meta, $post_id, $data );
-
-		if ( 'nav_menu_item' === $data['post_type'] ) {
-			$this->process_menu_item_meta( $post_id, $data, $meta );
-		}
-
-		/**
-		 * Post processing completed.
-		 *
-		 * @param int $post_id New post ID.
-		 * @param array $data Raw data imported for the post.
-		 * @param array $meta Raw meta data, already processed by {@see process_post_meta}.
-		 * @param array $comments Raw comment data, already processed by {@see process_comments}.
-		 * @param array $terms Raw term data, already processed.
-		 */
-		do_action( 'wxr_importer.processed.post', $post_id, $data, $meta, $comments, $terms );
-
 	}
 
 	/**
@@ -691,7 +574,6 @@ class Importer {
 			 * @param array $meta_item Meta data. (Return empty to skip.)
 			 * @param int $post_id Post the meta is attached to.
 			 */
-			$meta_item = apply_filters( 'wxr_importer.pre_process.post_meta', $meta_item, $post_id );
 			if ( empty( $meta_item ) ) {
 				return false;
 			}
@@ -699,29 +581,14 @@ class Importer {
 			$key   = apply_filters( 'import_post_meta_key', $meta_item['key'], $post_id, $post );
 			$value = false;
 
-			if ( '_edit_last' === $key ) {
-				$value = intval( $meta_item['value'] );
-				if ( ! isset( $this->mapping['user'][ $value ] ) ) {
-					// Skip!
-					continue;
-				}
-
-				$value = $this->mapping['user'][ $value ];
-			}
-
 			if ( $key ) {
-				// export gets meta straight from the DB so could have a serialized string
+				// Export gets meta straight from the DB so could have a serialized string.
 				if ( ! $value ) {
 					$value = maybe_unserialize( $meta_item['value'] );
 				}
 
 				add_post_meta( $post_id, $key, $value );
 				do_action( 'import_post_meta', $post_id, $key, $value );
-
-				// if the post has a featured image, take note of this in case of remap
-				if ( '_thumbnail_id' === $key ) {
-					$this->featured_images[ $post_id ] = (int) $value;
-				}
 			}
 		}
 

@@ -406,6 +406,83 @@ class ImportUI {
 	}
 
 	/**
+	 * Run an import, and send an event-stream response.
+	 *
+	 * Streams logs and success messages to the browser to allow live status
+	 * and updates.
+	 */
+	public function stream_import() {
+		// Turn off PHP output compression
+		$previous = error_reporting( error_reporting() ^ E_WARNING ); // @codingStandardsIgnoreLine
+		ini_set( 'output_buffering', 'off' ); // @codingStandardsIgnoreLine
+		ini_set( 'zlib.output_compression', false ); // @codingStandardsIgnoreLine
+		error_reporting( $previous ); // @codingStandardsIgnoreLine
+
+		if ( $GLOBALS['is_nginx'] ) {
+			// Setting this header instructs Nginx to disable fastcgi_buffering
+			// and disable gzip for this request.
+			header( 'X-Accel-Buffering: no' );
+			header( 'Content-Encoding: none' );
+		}
+
+		// Start the event stream.
+		header( 'Content-Type: text/event-stream' );
+
+		$this->id = wp_unslash( (int) $_REQUEST['id'] ); // @codingStandardsIgnoreLine
+		$settings = get_post_meta( $this->id, '_resource_import_settings', true );
+		if ( empty( $settings ) ) {
+			// Tell the browser to stop reconnecting.
+			status_header( 204 );
+			exit;
+		}
+
+		// 2KB padding for IE
+		echo ':' . str_repeat( ' ', 2048 ) . "\n\n"; // @codingStandardsIgnoreLine
+
+		// Time to run the import!
+		set_time_limit( 0 );
+
+		// Ensure we're not buffered.
+		wp_ob_end_flush_all();
+		flush();
+
+		$importer = $this->get_importer();
+
+		// Keep track of our progress
+		add_action( 'resource_importer.processed.post', [ $this, 'imported_resource' ], 10, 2 );
+		add_action( 'resource_importer.process_failed.post', [ $this, 'imported_resource' ], 10, 2 );
+		add_action( 'resource_importer.process_already_imported.post', [ $this, 'already_imported_resource' ], 10, 2 );
+		add_action( 'resource_importer.process_skipped.post', [ $this, 'already_imported_resource' ], 10, 2 );
+		add_action( 'resource_importer.processed.term', [ $this, 'imported_term' ] );
+		add_action( 'resource_importer.process_failed.term', [ $this, 'imported_term' ] );
+		add_action( 'resource_importer.process_already_imported.term', [ $this, 'imported_term' ] );
+
+		// Clean up some memory
+		unset( $settings );
+
+		// Flush once more.
+		flush();
+
+		$file = get_attached_file( $this->id );
+		$err  = $importer->import( $file );
+
+		// Remove the settings to stop future reconnects.
+		delete_post_meta( $this->id, '_resource_import_settings' );
+
+		// Let the browser know we're done.
+		$complete = array(
+			'action' => 'complete',
+			'error'  => false,
+		);
+		if ( is_wp_error( $err ) ) {
+			$complete['error'] = $err->get_error_message();
+		}
+
+		$this->emit_sse_message( $complete );
+		exit;
+	}
+
+	/**
 	 * Get the importer instance.
 	 *
 	 * @return WXR_Importer
@@ -414,5 +491,82 @@ class ImportUI {
 		$importer = new Importer();
 
 		return $importer;
+	}
+
+	/**
+	 * Get options for the importer.
+	 *
+	 * @return array Options to pass to Importer::__construct
+	 */
+	protected function get_import_options() {
+		$options = array(
+			'fetch_attachments' => $this->fetch_attachments,
+			'default_author'    => get_current_user_id(),
+		);
+
+		/**
+		 * Filter the importer options used in the admin UI.
+		 *
+		 * @param array $options Options to pass to Importer::__construct
+		 */
+		return apply_filters( 'resource_importer.admin.import_options', $options ); // @codingStandardsIgnoreLine
+	}
+
+	/**
+	 * Emit a Server-Sent Events message.
+	 *
+	 * @param mixed $data Data to be JSON-encoded and sent in the message.
+	 */
+	protected function emit_sse_message( $data ) {
+		echo "event: message\n";
+		echo 'data: ' . wp_json_encode( $data ) . "\n\n";
+
+		// Extra padding.
+		echo ':' . str_repeat( ' ', 2048 ) . "\n\n"; // @codingStandardsIgnoreLine
+
+		flush();
+	}
+
+	/**
+	 * Send message when a post has been imported.
+	 *
+	 * @param int   $id Post ID.
+	 * @param array $data Post data saved to the DB.
+	 */
+	public function imported_resource( $id, $data ) {
+		$this->emit_sse_message(
+			[
+				'action' => 'updateDelta',
+				'type'   => 'resources',
+				'delta'  => 1,
+			]
+		);
+	}
+
+	/**
+	 * Send message when a post is marked as already imported.
+	 *
+	 * @param array $data Post data saved to the DB.
+	 */
+	public function already_imported_resource( $data ) {
+		$this->emit_sse_message(
+			[
+				'action' => 'updateDelta',
+				'type'   => 'resources',
+				'delta'  => 1,
+			]
+		);
+	}
+	/**
+	 * Send message when a term has been imported.
+	 */
+	public function imported_term() {
+		$this->emit_sse_message(
+			[
+				'action' => 'updateDelta',
+				'type'   => 'terms',
+				'delta'  => 1,
+			]
+		);
 	}
 }

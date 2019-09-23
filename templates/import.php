@@ -54,11 +54,11 @@ $this->render_header();
 						?>
 					</td>
 					<td>
-						<span id="completed-posts" class="completed">0/0</span>
+						<span id="completed-resources" class="completed">0/0</span>
 					</td>
 					<td>
-						<progress id="progressbar-posts" max="100" value="0"></progress>
-						<span id="progress-posts" class="progress">0%</span>
+						<progress id="progressbar-resources" max="100" value="0"></progress>
+						<span id="progress-resources" class="progress">0%</span>
 					</td>
 				</tr>
 			</tbody>
