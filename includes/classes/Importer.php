@@ -94,14 +94,7 @@ class Importer {
 		$data        = new ImportInfo();
 		$r           = 0;
 		foreach ( $spreadsheet->getActiveSheet()->getRowIterator() as $row ) {
-			// Column Headings
-			if ( 0 === $r ) {
-				$cell_iterator = $row->getCellIterator();
-				$cell_iterator->setIterateOnlyExistingCells( false );
-				foreach ( $cell_iterator as $cell ) {
-					$this->headings[] = mb_convert_encoding( $cell->getValue(), 'Windows-1252', 'UTF-8' );
-				}
-			} else {
+			if ( 0 < $r ) {
 				$data->resource_count++;
 			}
 			$r++;
@@ -179,7 +172,13 @@ class Importer {
 		// Start processing the spreadsheet object.
 		$r = 0;
 		foreach ( $spreadsheet->getActiveSheet()->getRowIterator() as $row ) {
-			if ( 0 < $r ) {
+			if ( 0 === $r ) {
+				$cell_iterator = $row->getCellIterator();
+				$cell_iterator->setIterateOnlyExistingCells( false );
+				foreach ( $cell_iterator as $cell ) {
+					$this->headings[] = $this->convert_string_encoding( $cell->getValue() );
+				}
+			} elseif ( 0 < $r ) {
 				$parsed = $this->parse_post_row( $row );
 				$this->process_post( $parsed['data'], $parsed['meta'], $parsed['terms'] );
 			}
@@ -318,8 +317,8 @@ class Importer {
 							break;
 						case 'Title':
 							$data['post_title'] = $this->convert_string_encoding( $val );
-							// TODO: Generate slug.
-							$data['post_name'] = '';
+							$data['post_name']  = sanitize_title( $data['post_title'] );
+							$data['hash']       = md5( $data['post_title'] );
 							break;
 						case 'Publication Title':
 							// TODO: Add a visible field for this.
@@ -445,10 +444,8 @@ class Importer {
 			return false;
 		}
 
-		$hash = md5( $data['post_title'] );
-
 		// Have we already processed this?
-		if ( isset( $this->mapping['post'][ $hash ] ) ) {
+		if ( isset( $this->mapping['post'][ $data['hash'] ] ) ) {
 			return;
 		}
 
@@ -477,6 +474,8 @@ class Importer {
 					$data['post_title']
 				)
 			);
+
+			do_action( 'resource_importer.process_already_imported.resource', $data ); // @codingStandardsIgnoreLine
 
 			return false;
 		}
@@ -511,6 +510,7 @@ class Importer {
 			);
 			$this->logger->debug( $post_id->get_error_message() );
 
+			do_action( 'resource_importer.process_failed.resource', $post_id, $data, $meta, $terms ); // @codingStandardsIgnoreLine
 			return false;
 		}
 
@@ -552,6 +552,8 @@ class Importer {
 		}
 
 		$this->process_post_meta( $meta, $post_id, $data );
+
+		do_action( 'resource_importer.processed.resource', $post_id, $data, $meta, $terms ); // @codingStandardsIgnoreLine
 	}
 
 	/**
@@ -624,7 +626,7 @@ class Importer {
 	 */
 	protected function post_exists( $data ) {
 		// Constant-time lookup if we prefilled.
-		$exists_key = $data['guid'];
+		$exists_key = $data['hash'];
 
 		if ( $this->options['prefill_existing_posts'] ) {
 			return isset( $this->exists['post'][ $exists_key ] ) ? $this->exists['post'][ $exists_key ] : false;
@@ -649,7 +651,6 @@ class Importer {
 	 * @param int   $post_id Post ID.
 	 */
 	protected function mark_post_exists( $data, $post_id ) {
-		$exists_key                          = $data['guid'];
-		$this->exists['post'][ $exists_key ] = $post_id;
+		$this->exists['post'][ $data['hash'] ] = $post_id;
 	}
 }

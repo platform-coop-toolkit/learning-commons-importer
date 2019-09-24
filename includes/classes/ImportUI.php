@@ -7,6 +7,8 @@
 
 namespace LearningCommonsImporter;
 
+use LearningCommonsImporter\LoggerSSE;
+
 /**
  * Class which handles the resource importer UI.
  */
@@ -176,7 +178,7 @@ class ImportUI {
 		];
 		wp_localize_script( 'import-upload', 'importUploadSettings', $settings );
 
-		wp_enqueue_style( 'wxr-import-upload', LEARNING_COMMONS_IMPORTER_URL . 'dist/css/admin-style.css', [], LEARNING_COMMONS_IMPORTER_VERSION );
+		wp_enqueue_style( 'resource-import-upload', LEARNING_COMMONS_IMPORTER_URL . 'dist/css/admin-style.css', [], LEARNING_COMMONS_IMPORTER_VERSION );
 
 		// Load the template
 		remove_action( 'post-plupload-upload-ui', 'media_upload_flash_bypass' );
@@ -210,7 +212,7 @@ class ImportUI {
 	/**
 	 * Handle an async upload.
 	 *
-	 * Triggers on `async-upload.php?action=wxr-import-upload` to handle
+	 * Triggers on `async-upload.php?action=resource-import-upload` to handle
 	 * Plupload requests from the importer.
 	 */
 	public function handle_async_upload() {
@@ -430,7 +432,7 @@ class ImportUI {
 
 		$this->id = wp_unslash( (int) $_REQUEST['id'] ); // @codingStandardsIgnoreLine
 		$settings = get_post_meta( $this->id, '_resource_import_settings', true );
-		if ( empty( $settings ) ) {
+		if ( ! is_array( $settings ) ) {
 			// Tell the browser to stop reconnecting.
 			status_header( 204 );
 			exit;
@@ -449,10 +451,10 @@ class ImportUI {
 		$importer = $this->get_importer();
 
 		// Keep track of our progress
-		add_action( 'resource_importer.processed.post', [ $this, 'imported_resource' ], 10, 2 );
-		add_action( 'resource_importer.process_failed.post', [ $this, 'imported_resource' ], 10, 2 );
-		add_action( 'resource_importer.process_already_imported.post', [ $this, 'already_imported_resource' ], 10, 2 );
-		add_action( 'resource_importer.process_skipped.post', [ $this, 'already_imported_resource' ], 10, 2 );
+		add_action( 'resource_importer.processed.resource', [ $this, 'imported_resource' ], 10, 2 );
+		add_action( 'resource_importer.process_failed.resource', [ $this, 'imported_resource' ], 10, 2 );
+		add_action( 'resource_importer.process_already_imported.resource', [ $this, 'already_imported_resource' ], 10, 2 );
+		add_action( 'resource_importer.process_skipped.resource', [ $this, 'already_imported_resource' ], 10, 2 );
 		add_action( 'resource_importer.processed.term', [ $this, 'imported_term' ] );
 		add_action( 'resource_importer.process_failed.term', [ $this, 'imported_term' ] );
 		add_action( 'resource_importer.process_already_imported.term', [ $this, 'imported_term' ] );
@@ -485,10 +487,12 @@ class ImportUI {
 	/**
 	 * Get the importer instance.
 	 *
-	 * @return WXR_Importer
+	 * @return Importer
 	 */
 	protected function get_importer() {
 		$importer = new Importer();
+		$logger   = new LoggerSSE();
+		$importer->set_logger( $logger );
 
 		return $importer;
 	}
@@ -537,7 +541,7 @@ class ImportUI {
 		$this->emit_sse_message(
 			[
 				'action' => 'updateDelta',
-				'type'   => 'resources',
+				'type'   => 'posts',
 				'delta'  => 1,
 			]
 		);
@@ -552,7 +556,7 @@ class ImportUI {
 		$this->emit_sse_message(
 			[
 				'action' => 'updateDelta',
-				'type'   => 'resources',
+				'type'   => 'posts',
 				'delta'  => 1,
 			]
 		);

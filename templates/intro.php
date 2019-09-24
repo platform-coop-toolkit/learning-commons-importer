@@ -8,7 +8,6 @@
 wp_enqueue_media();
 
 $this->render_header();
-
 ?>
 <div class="welcome-panel">
 	<div class="welcome-panel-content">

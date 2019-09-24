@@ -2,7 +2,7 @@
 
 const resourceImport = {
 	complete: {
-		resources: 0,
+		posts: 0,
 	},
 
 	/**
@@ -82,13 +82,34 @@ evtSource.onmessage = function ( message ) {
 evtSource.addEventListener( 'log', function ( message ) {
 	const data = JSON.parse( message.data );
 	const row = document.createElement( 'tr' );
-	const level = document.createElement( 'td' );
+	const levelElement = document.createElement( 'td' );
+	const icon = document.createElement( 'span' );
+	const level = document.createElement( 'span' );
+	level.setAttribute( 'data-level', data.level );
+	level.classList.add( 'screen-reader-text' );
 	level.appendChild( document.createTextNode( data.level ) );
-	row.appendChild( level );
+	switch ( data.level ) {
+			case 'info':
+				icon.setAttribute( 'class', 'dashicons dashicons-yes-alt' );
+				break;
+			case 'warning':
+				icon.setAttribute( 'class', 'dashicons dashicons-warning' );
+				break;
+			case 'error':
+				icon.setAttribute( 'class', 'dashicons dashicons-dismiss' );
+				break;
+			default:
+				icon.setAttribute( 'class', 'dashicons dashicons-info' );
+				break;
+	}
+	levelElement.appendChild( icon );
+	levelElement.appendChild( level );
+	row.appendChild( levelElement );
+
 
 	const messageElement = document.createElement( 'td' );
 	messageElement.appendChild( document.createTextNode( data.message ) );
-	row.appendChild( message );
+	row.appendChild( messageElement );
 
 	jQuery( '#import-log' ).append( row );
 } );
