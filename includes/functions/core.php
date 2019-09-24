@@ -23,6 +23,7 @@ function setup() {
 	add_action( 'init', $n( 'init' ) );
 	add_action( 'wp_enqueue_scripts', $n( 'scripts' ) );
 	add_action( 'wp_enqueue_scripts', $n( 'styles' ) );
+	add_action( 'admin_init', $n( 'register_importer' ) );
 	add_action( 'admin_enqueue_scripts', $n( 'admin_scripts' ) );
 	add_action( 'admin_enqueue_scripts', $n( 'admin_styles' ) );
 
@@ -52,6 +53,26 @@ function i18n() {
  */
 function init() {
 	do_action( 'learning_commons_importer_init' );
+}
+
+/**
+ * Register a custom WordPress importer.
+ *
+ * @see https://developer.wordpress.org/reference/functions/register_importer/
+ *
+ * @return void
+ */
+function register_importer() {
+	$GLOBALS['resource_importer'] = new \LearningCommonsImporter\ImportUI();
+	\register_importer(
+		'learning-commons-resources',
+		__( 'Resources (Excel)', 'learning-commons-importer' ),
+		__( 'Import resources from an Excel spreadsheet.', 'learning-commons-importer' ),
+		[ $GLOBALS['resource_importer'], 'dispatch' ]
+	);
+
+	add_action( 'load-importer-resources', [ $GLOBALS['resource_importer'], 'on_load' ] );
+	add_action( 'wp_ajax_resource-import', [ $GLOBALS['resource_importer'], 'stream_import' ] );
 }
 
 /**

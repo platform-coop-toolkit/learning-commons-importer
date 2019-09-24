@@ -1,3 +1,76 @@
 /**
  * LearningCommonsImporter - Admin Styles
  */
+
+:root {
+	--green: #46b450;
+}
+
+#plupload-upload-ui .drag-drop-status {
+	display: none;
+	margin: 70px auto 0;
+	width: 400px;
+}
+
+#plupload-upload-ui .drag-drop-status .media-item {
+	margin: 0 auto;
+	width: 200px;
+}
+
+.import-status {
+	font-size: 14px;
+	line-height: 16px;
+	margin-bottom: 1em;
+	width: 100%;
+}
+
+.import-status th,
+.import-status td {
+	margin-bottom: 6px;
+	padding: 0 0 8px;
+}
+
+.import-status thead th {
+	font-size: 16px;
+	padding-bottom: 1em;
+	text-align: left;
+	width: 32%;
+}
+
+.import-status thead th:first-child {
+	width: 36%;
+}
+
+#import-log tbody {
+	max-height: 40em;
+}
+
+.import-status-indicator {
+	margin-bottom: 1em;
+}
+
+.import-status-indicator progress {
+	width: 100%;
+}
+
+.import-status-indicator .status {
+	text-align: center;
+}
+
+.import-status-indicator .status .dashicons {
+	color: var(--green);
+	font-size: 3rem;
+	height: auto;
+	width: auto;
+}
+
+#completed-total {
+	display: none;
+}
+
+#import-status-message {
+	border-top: 1px solid #f2f2f2;
+	height: 40px;
+	line-height: 40px;
+	margin: 20px 0;
+}
