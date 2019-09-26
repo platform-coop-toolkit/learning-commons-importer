@@ -424,7 +424,9 @@ class Importer {
 				)
 			);
 
-			return;
+			do_action( 'resource_importer.process_skipped.resource', $data ); // @codingStandardsIgnoreLine
+
+			return false;
 		}
 
 		// Does this post already exist?

@@ -13,7 +13,7 @@ $this->render_header();
 <div class="welcome-panel">
 	<div class="welcome-panel-content">
 		<h2><?php esc_html_e( 'Step 2: Import Settings', 'learning-commons-importer' ); ?></h2>
-		<p><?php esc_html_e( 'Your import is almost ready to go. Before your content is imported, pick exactly how you want your data imported.', 'learning-commons-importer' ); ?></p>
+		<p><?php esc_html_e( 'Your import is almost ready to go.', 'learning-commons-importer' ); ?></p>
 
 		<div class="welcome-panel-column-container">
 			<div class="welcome-panel-column">
