@@ -4,6 +4,7 @@
  *
  * @package LearningCommonsImporter
  */
+
 ?>
 
 <?php do_action( 'learning_commons_importer_ui_footer' ); ?>
