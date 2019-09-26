@@ -103,52 +103,6 @@ class Importer {
 		return $data;
 	}
 
-	/* @codingStandardsIgnoreStart
-	$cell_iterator = $row->getCellIterator();
-	$cell_iterator->setIterateOnlyExistingCells( false );
-	$c = 0;
-	foreach ( $cell_iterator as $cell ) {
-		if ( $c >= 1 && $c < 41 && ! in_array( $c, [ 12, 13, 14 ], true ) ) {
-			$val = $cell->getValue();
-			if ( $val ) {
-				switch ( $headings[ $c ] ) {
-					case 'Author':
-						$val = explode( '; ', $val );
-						if ( ! is_array( $val ) ) {
-							$val = [ $val ];
-						}
-						foreach ( $val as $v ) {
-							$parts                                = explode( ', ', $v );
-							$name                                 = $parts[1] . ' ' . $parts[0];
-							$resources[ $r ][ $headings[ $c ] ][] = mb_convert_encoding( $name, 'Windows-1252', 'UTF-8' );
-						}
-						break;
-					case 'Manual Tags':
-					case 'Automatic Tags':
-						$val = explode( '; ', $val );
-						if ( ! is_array( $val ) ) {
-							$val = [ $val ];
-						}
-						foreach ( $val as $v ) {
-							$resources[ $r ]['Topics'][] = ucwords( mb_convert_encoding( $v, 'Windows-1252', 'UTF-8' ) );
-						}
-						break;
-					default:
-						if ( Date::isDateTime( $cell ) ) {
-							$resources[ $r ][ $headings[ $c ] ] = Date::excelToDateTimeObject( $val )->format( 'Y-m-d' );
-						} else {
-							$resources[ $r ][ $headings[ $c ] ] = mb_convert_encoding( $val, 'Windows-1252', 'UTF-8' );
-						}
-						break;
-				}
-			}
-		}
-
-		$c++;
-	}
-	@codingStandardsIgnoreEnd */
-
-
 	/**
 	 * The main controller for the actual import stage.
 	 *
@@ -444,11 +398,6 @@ class Importer {
 			return false;
 		}
 
-		// Have we already processed this?
-		if ( isset( $this->mapping['post'][ $data['hash'] ] ) ) {
-			return;
-		}
-
 		$post_type_object = get_post_type_object( $data['post_type'] );
 
 		// Is this type even valid?
@@ -464,6 +413,21 @@ class Importer {
 			return false;
 		}
 
+		// Have we already processed this?
+		if ( isset( $this->mapping['resource'][ $data['hash'] ] ) ) {
+			$this->logger->info(
+				sprintf(
+					/* Translators: %1$s: The post type name. %2$s: The post title. */
+					__( '%1$s "%2$s" already processed.', 'learning-commons-importer' ),
+					$post_type_object->labels->singular_name,
+					$data['post_title']
+				)
+			);
+
+			return;
+		}
+
+		// Does this post already exist?
 		$post_exists = $this->post_exists( $data );
 		if ( $post_exists ) {
 			$this->logger->info(
@@ -514,6 +478,7 @@ class Importer {
 			return false;
 		}
 
+		$this->mapping['resource'][ $data['hash'] ] = (int) $post_id;
 		$this->mark_post_exists( $data, $post_id );
 
 		$this->logger->info(
@@ -611,10 +576,10 @@ class Importer {
 	 */
 	protected function prefill_existing_posts() {
 		global $wpdb;
-		$posts = $wpdb->get_results( "SELECT ID, guid FROM {$wpdb->posts}" );
+		$posts = $wpdb->get_results( $wpdb->prepare( "SELECT ID, post_title FROM {$wpdb->posts} WHERE post_type = %s", 'lc_resource' ) );
 
 		foreach ( $posts as $item ) {
-			$this->exists['post'][ $item->guid ] = $item->ID;
+			$this->exists['resource'][ md5( $item->post_title ) ] = $item->ID;
 		}
 	}
 
@@ -629,17 +594,17 @@ class Importer {
 		$exists_key = $data['hash'];
 
 		if ( $this->options['prefill_existing_posts'] ) {
-			return isset( $this->exists['post'][ $exists_key ] ) ? $this->exists['post'][ $exists_key ] : false;
+			return isset( $this->exists['resource'][ $exists_key ] ) ? $this->exists['resource'][ $exists_key ] : false;
 		}
 
 		// No prefilling, but might have already handled it.
-		if ( isset( $this->exists['post'][ $exists_key ] ) ) {
-			return $this->exists['post'][ $exists_key ];
+		if ( isset( $this->exists['resource'][ $exists_key ] ) ) {
+			return $this->exists['resource'][ $exists_key ];
 		}
 
 		// Still nothing, try post_exists, and cache it.
-		$exists                              = post_exists( $data['post_title'], $data['post_content'], $data['post_date'] );
-		$this->exists['post'][ $exists_key ] = $exists;
+		$exists                                  = post_exists( $data['post_title'], $data['post_content'], $data['post_date'] );
+		$this->exists['resource'][ $exists_key ] = $exists;
 
 		return $exists;
 	}
@@ -651,6 +616,6 @@ class Importer {
 	 * @param int   $post_id Post ID.
 	 */
 	protected function mark_post_exists( $data, $post_id ) {
-		$this->exists['post'][ $data['hash'] ] = $post_id;
+		$this->exists['resource'][ $data['hash'] ] = $post_id;
 	}
 }
