@@ -49,8 +49,22 @@ class Importer {
 	 * @param array $options Options for constructor
 	 */
 	public function __construct( $options = [] ) {
-		$empty_types              = [ 'resource' => [] ];
-		$this->mapping            = $empty_types;
+		$empty_types   = [
+			'resource' => [],
+			'term'     => [],
+		];
+		$this->mapping = $empty_types;
+		// Add languages to existing terms.
+		foreach (
+			get_terms(
+				[
+					'taxonomy'   => 'language',
+					'hide_empty' => false,
+				]
+			) as $term
+		) {
+			$this->mapping['term'][ sha1( 'language:' . $term->slug ) ] = $term->term_id;
+		}
 		$this->requires_remapping = $empty_types;
 		$this->exists             = $empty_types;
 		$this->options            = wp_parse_args(
@@ -350,7 +364,11 @@ class Importer {
 							];
 							break;
 						case 'Language':
-							// TODO: Map to WordPress languages and set Polylang language.
+							$lang      = $this->map_language( $this->convert_string_encoding( $val ) );
+							$term_item = $this->parse_term( $lang, 'language' );
+							if ( ! empty( $term_item ) ) {
+								$terms[] = $term_item;
+							}
 							break;
 						case 'Rights':
 							// TODO: Handle licensing. @see https://github.com/platform-coop-toolkit/learning-commons-framework/issues/5
@@ -364,7 +382,7 @@ class Importer {
 								$val = [ $val ];
 							}
 							foreach ( $val as $v ) {
-								$term_item = $this->parse_topic( $v );
+								$term_item = $this->parse_term( $v );
 								if ( ! empty( $term_item ) ) {
 									$terms[] = $term_item;
 								}
@@ -565,6 +583,23 @@ class Importer {
 	}
 
 	/**
+	 * Parse a term.
+	 *
+	 * @param string $term     The term slug.
+	 * @param string $taxonomy The term's taxonomy.
+	 *
+	 * @return array An array of term data.
+	 */
+	protected function parse_term( $term, $taxonomy ) {
+		$data = [
+			'name'     => $term,
+			'slug'     => sanitize_title( $term ),
+			'taxonomy' => $taxonomy,
+		];
+		return $data;
+	}
+
+	/**
 	 * Prefill existing post data.
 	 *
 	 * This preloads all GUIDs into memory, allowing us to avoid hitting the
@@ -619,5 +654,39 @@ class Importer {
 	 */
 	protected function mark_post_exists( $data, $post_id ) {
 		$this->exists['resource'][ $data['hash'] ] = $post_id;
+	}
+
+	/**
+	 * Convert resource language code to Polylang language code.
+	 *
+	 * @param string $lang A language code from the Excel sheet.
+	 *
+	 * @return string $polylang A two-character language code for Polylang.
+	 */
+	protected function map_language( $lang ) {
+		$input = strpos( $lang, '-' ) ? explode( '-', $lang )[0] : $lang;
+		switch ( $input ) {
+			case 'ger':
+				$polylang = 'de';
+				break;
+			case 'spa':
+				$polylang = 'es';
+				break;
+			case 'fre':
+				$polylang = 'fr';
+				break;
+			case 'portuguese':
+				$polylang = 'pt';
+				break;
+			case 'eng':
+			case 'English':
+				$polylang = 'en';
+				break;
+			default:
+				$polylang = $input;
+				break;
+		}
+
+		return $polylang;
 	}
 }
