@@ -23,9 +23,9 @@ class Importer {
 	protected $headings = [];
 
 	/**
-	 * Mapping from Excel rows to imported post IDs.
+	 * Mapping from resources/terms to imported resource/term IDs.
 	 *
-	 * @var array $mapping An array where the key is an md5 hash of the resource URL and the value is the post ID.
+	 * @var array $mapping An array where the key is an md5 hash of the resource title or term slug and the value is the resource or term ID.
 	 */
 	protected $mapping = [];
 
@@ -65,12 +65,25 @@ class Importer {
 		) {
 			$this->mapping['term'][ sha1( 'language:' . $term->slug ) ] = $term->term_id;
 		}
+		// Add formats to existing terms.
+		foreach (
+			get_terms(
+				[
+					'taxonomy'   => 'lc_format',
+					'hide_empty' => false,
+				]
+			) as $term
+		) {
+			$this->mapping['term'][ sha1( 'lc_format:' . $term->slug ) ] = $term->term_id;
+		}
 		$this->requires_remapping = $empty_types;
 		$this->exists             = $empty_types;
 		$this->options            = wp_parse_args(
 			$options,
 			[
 				'prefill_existing_posts' => true,
+				// TODO: Move prefills into their own method.
+				'prefill_existing_terms' => true,
 			]
 		);
 	}
@@ -259,7 +272,11 @@ class Importer {
 				if ( $val ) {
 					switch ( $this->headings[ $c ] ) {
 						case 'Item Type':
-							// TODO: Map item types.
+							$format    = $this->map_format( $this->convert_string_encoding( $val ) );
+							$term_item = $this->parse_term( $format, 'lc_format' );
+							if ( ! empty( $term_item ) ) {
+								$terms[] = $term_item;
+							}
 							break;
 						case 'Publication Year':
 							$meta[] = [
@@ -289,10 +306,9 @@ class Importer {
 							$data['hash']       = md5( $data['post_title'] );
 							break;
 						case 'Publication Title':
-							// TODO: Add a visible field for this.
 							$meta[] = [
 								'key'   => 'lc_resource_publication_title',
-								'value' => $val,
+								'value' => $this->convert_string_encoding( $val ),
 							];
 							break;
 						case 'ISBN':
@@ -301,13 +317,13 @@ class Importer {
 							$meta_key = 'lc_resource_' . strtolower( $this->headings[ $c ] );
 							$meta[]   = [
 								'key'   => $meta_key,
-								'value' => $val,
+								'value' => $this->convert_string_encoding( $val ),
 							];
 							break;
 						case 'Url':
 							$meta[] = [
 								'key'   => 'lc_resource_permanent_link',
-								'value' => esc_url( $val ),
+								'value' => esc_url( $this->convert_string_encoding( $val ) ),
 							];
 							break;
 						case 'Abstract Note':
@@ -330,14 +346,13 @@ class Importer {
 							$meta_key = 'lc_resource_' . str_replace( ' ', '_', strtolower( $this->headings[ $c ] ) );
 							$meta[]   = [
 								'key'   => $meta_key,
-								'value' => $val,
+								'value' => $this->convert_string_encoding( $val ),
 							];
 							break;
 						case 'Short Title':
-							// TODO: Add a visible field for this.
 							$meta[] = [
 								'key'   => 'lc_resource_short_title',
-								'value' => $val,
+								'value' => $this->convert_string_encoding( $val ),
 							];
 							break;
 						case 'Series':
@@ -348,7 +363,7 @@ class Importer {
 							$meta_key = 'lc_resource_' . str_replace( ' ', '_', strtolower( $this->headings[ $c ] ) );
 							$meta[]   = [
 								'key'   => $meta_key,
-								'value' => $val,
+								'value' => $this->convert_string_encoding( $val ),
 							];
 							break;
 						case 'Publisher':
@@ -521,7 +536,7 @@ class Importer {
 
 				if ( isset( $this->mapping['term'][ $key ] ) ) {
 					$term_ids[ $taxonomy ][] = (int) $this->mapping['term'][ $key ];
-				} else {
+				} elseif ( 'lc_topic' === $taxonomy ) {
 					$meta[]             = array(
 						'key'   => '_resource_import_term',
 						'value' => $term,
@@ -688,5 +703,44 @@ class Importer {
 		}
 
 		return $polylang;
+	}
+
+	/**
+	 * Map item type from Excel to resource format taxonomy.
+	 *
+	 * @param string $format The Schema-ish format from the Excel sheet.
+	 *
+	 * @return string The mapped format's term slug.
+	 */
+	protected function map_format( $format ) {
+		switch ( $format ) {
+			case 'audioRecording':
+				return 'audio';
+			case 'caseStudy':
+				return 'case-studies';
+			case 'game':
+				return 'toolkits';
+			case 'conferencePaper':
+			case 'journalArticle':
+			case 'thesis':
+				return 'academic-papers';
+			case 'podcast':
+				return 'podcasts';
+			case 'videoRecording':
+				return 'videos';
+			case 'book':
+			case 'bookSection':
+				return 'books';
+			case 'report':
+				return 'reports';
+			case 'presentation':
+				return 'presentation-slides';
+			case 'blogPost':
+			case 'magazineArticle':
+			case 'newspaperArticle':
+			case 'webpage':
+			default:
+				return 'articles';
+		}
 	}
 }
