@@ -54,35 +54,11 @@ class Importer {
 			'term'     => [],
 		];
 		$this->mapping = $empty_types;
-		// Add languages to existing terms.
-		foreach (
-			get_terms(
-				[
-					'taxonomy'   => 'language',
-					'hide_empty' => false,
-				]
-			) as $term
-		) {
-			$this->mapping['term'][ sha1( 'language:' . $term->slug ) ] = $term->term_id;
-		}
-		// Add formats to existing terms.
-		foreach (
-			get_terms(
-				[
-					'taxonomy'   => 'lc_format',
-					'hide_empty' => false,
-				]
-			) as $term
-		) {
-			$this->mapping['term'][ sha1( 'lc_format:' . $term->slug ) ] = $term->term_id;
-		}
-		$this->requires_remapping = $empty_types;
-		$this->exists             = $empty_types;
-		$this->options            = wp_parse_args(
+		$this->exists  = $empty_types;
+		$this->options = wp_parse_args(
 			$options,
 			[
 				'prefill_existing_posts' => true,
-				// TODO: Move prefills into their own method.
 				'prefill_existing_terms' => true,
 			]
 		);
@@ -119,13 +95,29 @@ class Importer {
 	public function get_preliminary_information( $file ) {
 		$spreadsheet = $this->load_spreadsheet( $file );
 		$data        = new ImportInfo();
-		$r           = 0;
+		$topics      = [];
 		foreach ( $spreadsheet->getActiveSheet()->getRowIterator() as $row ) {
-			if ( 0 < $r ) {
+			if ( 1 < $row->getRowIndex() ) {
 				$data->resource_count++;
+				foreach ( [ 40, 41 ] as $c ) {
+					$val = $spreadsheet->getActiveSheet()->getCellByColumnAndRow( $c, $row->getRowIndex(), false );
+					if ( $val ) {
+						$val = explode( '; ', $val );
+						if ( is_array( $val ) ) {
+							foreach ( $val as $v ) {
+								$topics[] = sanitize_title( $this->convert_string_encoding( $v ) );
+							}
+						} else {
+							$topics[] = sanitize_title( $this->convert_string_encoding( $val ) );
+						}
+					}
+				}
 			}
-			$r++;
 		}
+
+		$terms = array_unique( $topics );
+
+		$data->term_count = count( $terms );
 
 		return $data;
 	}
@@ -151,19 +143,22 @@ class Importer {
 		}
 
 		// Start processing the spreadsheet object.
-		$r = 0;
 		foreach ( $spreadsheet->getActiveSheet()->getRowIterator() as $row ) {
-			if ( 0 === $r ) {
+			if ( 1 === $row->getRowIndex() ) {
 				$cell_iterator = $row->getCellIterator();
 				$cell_iterator->setIterateOnlyExistingCells( false );
 				foreach ( $cell_iterator as $cell ) {
 					$this->headings[] = $this->convert_string_encoding( $cell->getValue() );
 				}
-			} elseif ( 0 < $r ) {
-				$parsed = $this->parse_post_row( $row );
-				$this->process_post( $parsed['data'], $parsed['meta'], $parsed['terms'] );
+			} elseif ( 1 < $row->getRowIndex() ) {
+				$parsed_topics = $this->parse_row_terms( $spreadsheet, $row );
+				foreach ( $parsed_topics as $topic ) {
+					$term = $this->parse_term( $topic, 'lc_topic' );
+					$this->process_term( $term );
+				}
+				$parsed_post = $this->parse_row_post( $row );
+				$this->process_post( $parsed_post['data'], $parsed_post['meta'], $parsed_post['terms'] );
 			}
-			$r++;
 		}
 
 		// End the import routine.
@@ -202,6 +197,11 @@ class Importer {
 		// Prefill existing posts if required.
 		if ( $this->options['prefill_existing_posts'] ) {
 			$this->prefill_existing_posts();
+		}
+
+		// Prefill existing terms if required.
+		if ( $this->options['prefill_existing_terms'] ) {
+			$this->prefill_existing_terms();
 		}
 
 		/**
@@ -248,13 +248,40 @@ class Importer {
 	}
 
 	/**
+	 * Parse terms from a post row.
+	 *
+	 * @param \PHPOffice\PHPSpreadsheet\Spreadsheet           $spreadsheet Iterator object for the row.
+	 * @param \PHPOffice\PHPSpreadsheet\Worksheet\RowIterator $row Iterator object for the row.
+	 *
+	 * @return array|WP_Error Term data array on success, error otherwise.
+	 */
+	protected function parse_row_terms( $spreadsheet, $row ) {
+		$terms = [];
+		foreach ( [ 40, 41 ] as $c ) {
+			$val = $spreadsheet->getActiveSheet()->getCellByColumnAndRow( $c, $row->getRowIndex(), false );
+			if ( $val ) {
+				$val = explode( '; ', $val );
+				if ( is_array( $val ) ) {
+					foreach ( $val as $v ) {
+						$terms[] = $this->convert_string_encoding( $v );
+					}
+				} else {
+					$terms[] = $this->convert_string_encoding( $val );
+				}
+			}
+		}
+
+		return $terms;
+	}
+
+	/**
 	 * Parse a row into post data.
 	 *
 	 * @param RowIterator $row Iterator object for the row.
 	 *
 	 * @return array|WP_Error Post data array on success, error otherwise.
 	 */
-	protected function parse_post_row( $row ) {
+	protected function parse_row_post( $row ) {
 		$data  = [
 			'post_type'   => 'lc_resource',
 			'post_status' => 'pending',
@@ -390,19 +417,16 @@ class Importer {
 							break;
 						case 'Manual Tags':
 						case 'Automatic Tags':
-							/* @codingStandardsIgnoreStart
-							// TODO: Add parse_topic() method.
 							$val = explode( '; ', $val );
 							if ( ! is_array( $val ) ) {
 								$val = [ $val ];
 							}
 							foreach ( $val as $v ) {
-								$term_item = $this->parse_term( $v );
+								$term_item = $this->parse_term( $this->convert_string_encoding( $v ), 'lc_topic' );
 								if ( ! empty( $term_item ) ) {
 									$terms[] = $term_item;
 								}
 							}
-							@codingStandardsIgnoreEnd */
 							break;
 					}
 				}
@@ -438,7 +462,7 @@ class Importer {
 			$this->logger->warning(
 				sprintf(
 					/* Translators: %1$s: The post title. %2$s: The post type. */
-					__( 'Failed to import "%1$s": Invalid post type %2$s', 'learning-commons-importer' ),
+					__( 'Failed to import "%1$s": invalid post type %2$s.', 'learning-commons-importer' ),
 					$data['post_title'],
 					$data['post_type']
 				)
@@ -502,7 +526,7 @@ class Importer {
 			$this->logger->error(
 				sprintf(
 					/* Translators: %1$s: The post title. %2$s: The post type. */
-					__( 'Failed to import "%1$s" (%2$s)', 'learning-commons-importer' ),
+					__( 'Failed to import "%1$s" (%2$s).', 'learning-commons-importer' ),
 					$data['post_title'],
 					$post_type_object->labels->singular_name
 				)
@@ -529,18 +553,18 @@ class Importer {
 		$terms = apply_filters( 'wp_import_post_terms', $terms, $post_id, $data );
 
 		if ( ! empty( $terms ) ) {
-			$term_ids = array();
+			$term_ids = [];
 			foreach ( $terms as $term ) {
 				$taxonomy = $term['taxonomy'];
 				$key      = sha1( $taxonomy . ':' . $term['slug'] );
 
 				if ( isset( $this->mapping['term'][ $key ] ) ) {
 					$term_ids[ $taxonomy ][] = (int) $this->mapping['term'][ $key ];
-				} elseif ( 'lc_topic' === $taxonomy ) {
-					$meta[]             = array(
+				} else {
+					$meta[]             = [
 						'key'   => '_resource_import_term',
 						'value' => $term,
-					);
+					];
 					$requires_remapping = true;
 				}
 			}
@@ -615,6 +639,111 @@ class Importer {
 	}
 
 	/**
+	 * Create new terms based on import information.
+	 *
+	 * @param array $data Term data.
+	 */
+	protected function process_term( $data ) {
+		/**
+		 * Pre-process term data.
+		 *
+		 * @param array $data Term data. (Return empty to skip.)
+		 * @param array $meta Meta data.
+		 */
+		$data = apply_filters( 'resource_importer.pre_process.term', $data ); // @codingStandardsIgnoreLine
+		if ( empty( $data ) ) {
+			return false;
+		}
+
+		$taxonomy    = get_taxonomy( $data['taxonomy'] );
+		$mapping_key = sha1( $data['taxonomy'] . ':' . $data['slug'] );
+		$existing    = $this->term_exists( $data );
+		if ( $existing ) {
+			$this->logger->info(
+				sprintf(
+					/* Translators: %1$s: Taxonomy name. %2$s: Term name. */
+					__( '%1$s "%2$s" already exists.', 'wordpress-importer' ),
+					$taxonomy->labels->singular_name,
+					$data['name']
+				)
+			);
+			/**
+			 * Term processing already imported.
+			 *
+			 * @param array $data Raw data imported for the term.
+			 */
+			do_action( 'resource_importer.process_already_imported.term', $data ); // @codingStandardsIgnoreLine
+
+			$this->mapping['term'][ $mapping_key ] = $existing;
+			return false;
+		}
+
+		// WP really likes to repeat itself in export files
+		if ( isset( $this->mapping['term'][ $mapping_key ] ) ) {
+			return false;
+		}
+
+		$termdata = [];
+		$allowed  = [
+			'slug' => true,
+		];
+
+		foreach ( $data as $key => $value ) {
+			if ( ! isset( $allowed[ $key ] ) ) {
+				continue;
+			}
+
+			$termdata[ $key ] = $value;
+		}
+
+		$result = wp_insert_term( $data['name'], $data['taxonomy'], $termdata );
+		if ( is_wp_error( $result ) ) {
+			$this->logger->warning(
+				sprintf(
+					/* Translators: %1$s: Taxonomy name. %2$s: Term name. */
+					__( 'Failed to import %1$s "%2$s".', 'wordpress-importer' ),
+					strtolower( $taxonomy->labels->singular_name ),
+					$data['name']
+				)
+			);
+			$this->logger->debug( $result->get_error_message() );
+			do_action( 'wp_import_insert_term_failed', $result, $data );
+
+			/**
+			 * Term processing failed.
+			 *
+			 * @param WP_Error $result Error object.
+			 * @param array $data Raw data imported for the term.
+			 * @param array $meta Meta data supplied for the term.
+			 */
+			do_action( 'resource_importer.process_failed.term', $result, $data ); // @codingStandardsIgnoreLine
+			return false;
+		}
+
+		$term_id                               = $result['term_id'];
+		$this->mapping['term'][ $mapping_key ] = $term_id;
+
+		$this->logger->info(
+			sprintf(
+				/* Translators: %1$s: Term name. %2$s: Taxonomy name. */
+				__( 'Imported "%1$s" (%2$s)', 'wordpress-importer' ),
+				$data['name'],
+				$taxonomy->labels->singular_name
+			)
+		);
+
+		do_action( 'wp_import_insert_term', $term_id, $data );
+
+		/**
+		 * Term processing completed.
+		 *
+		 * @param int $term_id New term ID.
+		 * @param array $data Raw data imported for the term.
+		 */
+		do_action( 'resource_importer.processed.term', $term_id, $data ); // @codingStandardsIgnoreLine
+	}
+
+	/**
 	 * Prefill existing post data.
 	 *
 	 * This preloads all GUIDs into memory, allowing us to avoid hitting the
@@ -669,6 +798,65 @@ class Importer {
 	 */
 	protected function mark_post_exists( $data, $post_id ) {
 		$this->exists['resource'][ $data['hash'] ] = $post_id;
+	}
+
+	/**
+	 * Prefill existing term data.
+	 *
+	 * @see self::prefill_existing_posts() for justification of why this exists.
+	 */
+	protected function prefill_existing_terms() {
+		global $wpdb;
+
+		$query  = "SELECT t.term_id, tt.taxonomy, t.slug FROM {$wpdb->terms} AS t";
+		$query .= " JOIN {$wpdb->term_taxonomy} AS tt ON t.term_id = tt.term_id";
+		$terms  = $wpdb->get_results( $query ); // @codingStandardsIgnoreLine
+
+		foreach ( $terms as $item ) {
+			$exists_key                          = sha1( $item->taxonomy . ':' . $item->slug );
+			$this->exists['term'][ $exists_key ] = $item->term_id;
+		}
+	}
+
+	/**
+	 * Does the term exist?
+	 *
+	 * @param array $data Term data to check against.
+	 * @return int|bool Existing term ID if it exists, false otherwise.
+	 */
+	protected function term_exists( $data ) {
+		$exists_key = sha1( $data['taxonomy'] . ':' . $data['slug'] );
+
+		// Constant-time lookup if we prefilled
+		if ( $this->options['prefill_existing_terms'] ) {
+			return isset( $this->exists['term'][ $exists_key ] ) ? $this->exists['term'][ $exists_key ] : false;
+		}
+
+		// No prefilling, but might have already handled it
+		if ( isset( $this->exists['term'][ $exists_key ] ) ) {
+			return $this->exists['term'][ $exists_key ];
+		}
+
+		// Still nothing, try comment_exists, and cache it
+		$exists = term_exists( $data['slug'], $data['taxonomy'] );
+		if ( is_array( $exists ) ) {
+			$exists = $exists['term_id'];
+		}
+
+		$this->exists['term'][ $exists_key ] = $exists;
+
+		return $exists;
+	}
+
+	/**
+	 * Mark the term as existing.
+	 *
+	 * @param array $data Term data to mark as existing.
+	 * @param int   $term_id Term ID.
+	 */
+	protected function mark_term_exists( $data, $term_id ) {
+		$exists_key                          = sha1( $data['taxonomy'] . ':' . $data['slug'] );
+		$this->exists['term'][ $exists_key ] = $term_id;
 	}
 
 	/**
