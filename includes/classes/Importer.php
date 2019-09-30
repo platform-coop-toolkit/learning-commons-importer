@@ -357,8 +357,12 @@ class Importer {
 						case 'Date':
 							if ( Date::isDateTime( $cell ) ) {
 								$meta[] = [
-									'key'   => 'lc_resource_publication_date',
-									'value' => Date::excelToDateTimeObject( $val )->format( 'Y-m-d' ),
+									'key'   => 'lc_resource_publication_month',
+									'value' => Date::excelToDateTimeObject( $val )->format( 'm' ),
+								];
+								$meta[] = [
+									'key'   => 'lc_resource_publication_day',
+									'value' => Date::excelToDateTimeObject( $val )->format( 'd' ),
 								];
 							}
 							break;
