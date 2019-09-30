@@ -14,6 +14,7 @@ $url  = add_query_arg( urlencode_deep( $args ), admin_url( 'admin-ajax.php' ) );
 $script_data = array(
 	'count'   => array(
 		'posts' => $data->resource_count,
+		'terms' => $data->term_count,
 	),
 	'url'     => $url,
 	'strings' => array(
@@ -59,6 +60,27 @@ $this->render_header();
 					<td>
 						<progress id="progressbar-posts" max="100" value="0"></progress>
 						<span id="progress-posts" class="progress">0%</span>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<span class="dashicons dashicons-category"></span>
+						<?php
+						echo esc_html(
+							sprintf(
+								/* translators: %d: Number of terms when there's only one term (1). %d: Number of terms. */
+								_n( '%d topic', '%d topics', $data->term_count, 'learning-commons-importer' ),
+								$data->term_count
+							)
+						);
+						?>
+					</td>
+					<td>
+						<span id="completed-terms" class="completed">0/0</span>
+					</td>
+					<td>
+						<progress id="progressbar-terms" max="100" value="0"></progress>
+						<span id="progress-terms" class="progress">0%</span>
 					</td>
 				</tr>
 			</tbody>

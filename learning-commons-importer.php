@@ -13,7 +13,7 @@
  */
 
 // Useful global constants.
-define( 'LEARNING_COMMONS_IMPORTER_VERSION', '1.0.0-alpha' );
+define( 'LEARNING_COMMONS_IMPORTER_VERSION', '1.0.0-alpha.2' );
 define( 'LEARNING_COMMONS_IMPORTER_URL', plugin_dir_url( __FILE__ ) );
 define( 'LEARNING_COMMONS_IMPORTER_PATH', plugin_dir_path( __FILE__ ) );
 define( 'LEARNING_COMMONS_IMPORTER_INC', LEARNING_COMMONS_IMPORTER_PATH . 'includes/' );

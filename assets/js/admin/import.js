@@ -3,6 +3,7 @@
 const resourceImport = {
 	complete: {
 		posts: 0,
+		terms: 0,
 	},
 
 	/**
