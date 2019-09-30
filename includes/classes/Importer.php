@@ -95,7 +95,7 @@ class Importer {
 	public function get_preliminary_information( $file ) {
 		$spreadsheet = $this->load_spreadsheet( $file );
 		$data        = new ImportInfo();
-		$topics      = [];
+		$terms       = [];
 		foreach ( $spreadsheet->getActiveSheet()->getRowIterator() as $row ) {
 			if ( 1 < $row->getRowIndex() ) {
 				$data->resource_count++;
@@ -105,17 +105,15 @@ class Importer {
 						$val = explode( '; ', $val );
 						if ( is_array( $val ) ) {
 							foreach ( $val as $v ) {
-								$topics[] = sanitize_title( $this->convert_string_encoding( $v ) );
+								$terms[] = $v;
 							}
 						} else {
-							$topics[] = sanitize_title( $this->convert_string_encoding( $val ) );
+							$terms[] = $val;
 						}
 					}
 				}
 			}
 		}
-
-		$terms = array_unique( $topics );
 
 		$data->term_count = count( $terms );
 
@@ -558,7 +556,9 @@ class Importer {
 				$taxonomy = $term['taxonomy'];
 				$key      = sha1( $taxonomy . ':' . $term['slug'] );
 
-				if ( isset( $this->mapping['term'][ $key ] ) ) {
+				if ( isset( $this->exists['term'][ $key ] ) ) {
+					$term_ids[ $taxonomy ][] = (int) $this->exists['term'][ $key ];
+				} elseif ( isset( $this->mapping['term'][ $key ] ) ) {
 					$term_ids[ $taxonomy ][] = (int) $this->mapping['term'][ $key ];
 				} else {
 					$meta[]             = [

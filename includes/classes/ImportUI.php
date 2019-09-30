@@ -561,6 +561,7 @@ class ImportUI {
 			]
 		);
 	}
+
 	/**
 	 * Send message when a term has been imported.
 	 */
