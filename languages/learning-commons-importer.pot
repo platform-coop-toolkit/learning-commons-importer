@@ -2,14 +2,14 @@
 # This file is distributed under the same license as the Learning Commons Importer plugin.
 msgid ""
 msgstr ""
-"Project-Id-Version: Learning Commons Importer 1.0.0-alpha\n"
+"Project-Id-Version: Learning Commons Importer 1.0.0-alpha.1\n"
 "Report-Msgid-Bugs-To: https://github.com/platform-coop-toolkit/learning-commons-importer/issues\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2019-09-12T22:03:27+00:00\n"
+"POT-Creation-Date: 2019-10-01T00:01:29+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.2.0\n"
 "X-Domain: learning-commons-importer\n"
@@ -34,47 +34,209 @@ msgstr ""
 msgid "https://github.com/platform-coop-toolkit/"
 msgstr ""
 
-#: includes/classes/ImportUI.php:57
+#: includes/classes/Importer.php:188
+msgid "The file does not exist, please try again."
+msgstr ""
+
+#. Translators: %1$s: The post title. %2$s: The post type.
+#: includes/classes/Importer.php:467
+msgid "Failed to import \"%1$s\": invalid post type %2$s."
+msgstr ""
+
+#. Translators: %1$s: The post type name. %2$s: The post title.
+#: includes/classes/Importer.php:480
+msgid "%1$s \"%2$s\" already processed."
+msgstr ""
+
+#. Translators: %1$s: The post type name. %2$s: The post title.
+#: includes/classes/Importer.php:497
+msgid "%1$s \"%2$s\" already exists."
+msgstr ""
+
+#. Translators: %1$s: The post title. %2$s: The post type.
+#: includes/classes/Importer.php:531
+msgid "Failed to import \"%1$s\" (%2$s)."
+msgstr ""
+
+#. Translators: %1$s: The post title. %2$s: The post type.
+#: includes/classes/Importer.php:548
+msgid "Imported \"%1$s\" (%2$s)"
+msgstr ""
+
+#: includes/classes/ImportUI.php:59
+#: includes/classes/LoggerHTML.php:28
 msgid "Sorry, there has been an error."
 msgstr ""
 
-#: includes/classes/ImportUI.php:63
+#: includes/classes/ImportUI.php:65
+#: templates/upload.php:119
 msgid "Try Again"
 msgstr ""
 
+#: includes/classes/ImportUI.php:136
+msgid "Before you can upload your import file, you will need to fix the following error:"
+msgstr ""
+
+#: includes/classes/ImportUI.php:157
+msgid "Select"
+msgstr ""
+
+#: includes/classes/ImportUI.php:158
+msgid "Import"
+msgstr ""
+
+#: includes/classes/ImportUI.php:166
+msgid "Excel files"
+msgstr ""
+
 #. translators: %s: Path to uploaded file.
-#: includes/classes/ImportUI.php:200
+#: includes/classes/ImportUI.php:202
 msgid "The Excel file could not be found at %s. It is likely that this was caused by a permissions problem."
 msgstr ""
 
-#: includes/classes/ImportUI.php:372
+#: includes/classes/ImportUI.php:288
+#: includes/classes/ImportUI.php:299
+msgid "Invalid media item ID."
+msgstr ""
+
+#: includes/classes/ImportUI.php:307
+msgid "You cannot access the selected media item."
+msgstr ""
+
+#: includes/classes/ImportUI.php:402
 msgid "Could not cache information on the import."
 msgstr ""
 
-#: includes/functions/core.php:67
+#: includes/functions/core.php:69
 msgid "Resources (Excel)"
 msgstr ""
 
-#: includes/functions/core.php:67
+#: includes/functions/core.php:70
 msgid "Import resources from an Excel spreadsheet."
 msgstr ""
 
-#: templates/intro.php:15
+#: templates/import.php:21
+msgid "Import complete!"
+msgstr ""
+
+#: templates/import.php:33
+msgid "Step 3: Importing"
+msgstr ""
+
+#: templates/import.php:34
+msgid "Now importing."
+msgstr ""
+
+#: templates/import.php:38
+#: templates/select-options.php:20
+msgid "Import Summary"
+msgstr ""
+
+#: templates/import.php:39
+msgid "Completed"
+msgstr ""
+
+#: templates/import.php:40
+msgid "Progress"
+msgstr ""
+
+#. translators: %d: Number of resources when there's only one resource (1). %d: Number of resources.
+#: templates/import.php:51
+#: templates/select-options.php:28
+msgid "%d resource"
+msgid_plural "%d resources"
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %d: Number of terms when there's only one term (1). %d: Number of terms.
+#: templates/import.php:72
+#: templates/select-options.php:40
+msgid "%d topic"
+msgid_plural "%d topics"
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/import.php:104
+msgid "Type"
+msgstr ""
+
+#: templates/import.php:105
+msgid "Message"
+msgstr ""
+
+#: templates/intro.php:14
 msgid "Step 1: Select Your Files"
 msgstr ""
 
-#: templates/intro.php:16
+#: templates/intro.php:15
 msgid "Welcome to the Learning Commons Importer. Let&#8217;s get started importing your resources."
 msgstr ""
 
-#: templates/intro.php:17
+#: templates/intro.php:16
 msgid "To get started, simply upload a properly formatted Excel spreadsheet (.xls) to import."
 msgstr ""
 
-#: templates/intro.php:25
+#: templates/intro.php:24
 msgid "Already uploaded your Excel file?"
 msgstr ""
 
-#: templates/intro.php:26
+#: templates/intro.php:25
 msgid "Select it from the Media Library"
+msgstr ""
+
+#: templates/upload.php:23
+msgid "Drop files here"
+msgstr ""
+
+#: templates/upload.php:24
+msgctxt "Uploader: Drop files here - or - Select Files"
+msgid "or"
+msgstr ""
+
+#: templates/upload.php:25
+msgid "Select Files"
+msgstr ""
+
+#: templates/upload.php:52
+#: templates/upload.php:54
+msgid "Upload"
+msgstr ""
+
+#: templates/upload.php:55
+msgid "Cancel"
+msgstr ""
+
+#. translators: %s: The maximum upload file size.
+#: templates/upload.php:73
+msgid "Maximum upload file size: %s."
+msgstr ""
+
+#. translators: %s: The file name of the file being uploaded.
+#: templates/upload.php:86
+msgid "Uploading %s&#8230;"
+msgstr ""
+
+#: templates/upload.php:103
+msgid "Success! Your import file is ready, let&#8217;s get started."
+msgstr ""
+
+#: templates/upload.php:104
+msgid "Start Import"
+msgstr ""
+
+#. translators: %s: File upload error message.
+#: templates/upload.php:114
+msgid "Whoops, could not upload file: %s"
+msgstr ""
+
+#: templates/select-options.php:15
+msgid "Step 2: Import Settings"
+msgstr ""
+
+#: templates/select-options.php:16
+msgid "Your import is almost ready to go."
+msgstr ""
+
+#: templates/select-options.php:57
+msgid "Start Importing"
 msgstr ""
