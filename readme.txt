@@ -1,16 +1,16 @@
-=== 10up Scaffold ===
+=== Learning Commons Importer ===
 Contributors: greatislander
 Tags: excel, import
 Requires PHP: 7.3
 Requires at least: 5.2.3
 Tested up to: 5.2.3
-Stable tag: 1.0.0-alpha
+Stable tag: 1.0.0-alpha.1
 
 Resource importer for the Platform Co-op Resource Library.
 
 == Description ==
 
-Resource importer for the Platform Co-op Resource Library.
+This plugin adds an import module top import resources from a specially-formatted Excel spreadsheet.
 
 == Installation ==
 
@@ -29,10 +29,10 @@ TK.
 
 == Changelog ==
 
-= 1.0.0-alpha =
+= 1.0.0-alpha.1 =
 * First release.
 
 == Upgrade Notice ==
 
-= 1.0.0-alpha =
+= 1.0.0-alpha.1 =
 First release.

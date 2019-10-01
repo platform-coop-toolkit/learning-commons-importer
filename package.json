@@ -1,6 +1,6 @@
 {
   "name": "@platform-coop-toolkit/learning-commons-importer",
-  "version": "1.0.0-alpha",
+  "version": "1.0.0-alpha.2",
   "description": "Resource importer for the Platform Co-op Resource Library.",
   "author": {
     "name": "OCAD University",
@@ -23,7 +23,8 @@
     "format-js": "eslint --fix assets/js",
     "lint": "npm run lint-css && npm run lint-js && npm run lint-php",
     "format": "npm run format-js",
-    "localize": "wp i18n make-pot . languages/learning-commons-importer.pot --headers='{\"Report-Msgid-Bugs-To\":\"https://github.com/platform-coop-toolkit/learning-commons-importer/issues\"}'"
+    "localize": "wp i18n make-pot . languages/learning-commons-importer.pot --headers='{\"Report-Msgid-Bugs-To\":\"https://github.com/platform-coop-toolkit/learning-commons-importer/issues\"}'",
+    "readme": "gulp readme"
   },
   "husky": {
     "hooks": {
@@ -61,6 +62,8 @@
     "cssnano": "^4.1.10",
     "eslint": "^6.5.0",
     "eslint-loader": "^3.0.2",
+    "gulp": "^4.0.2",
+    "gulp-readme-to-markdown": "^0.2.1",
     "husky": "^3.0.7",
     "lint-staged": "^9.4.0",
     "mini-css-extract-plugin": "^0.8.0",

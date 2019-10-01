@@ -1,5 +1,10 @@
 {
 	"extends": "@10up/eslint-config",
+	"env": {
+		"browser": true,
+		"amd": true,
+		"node": true
+	},
 	"globals": {
 		"_": true,
 		"importUploadSettings": true,
