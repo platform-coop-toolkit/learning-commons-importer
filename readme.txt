@@ -4,7 +4,7 @@ Tags: excel, import
 Requires PHP: 7.3
 Requires at least: 5.2.3
 Tested up to: 5.2.3
-Stable tag: 1.0.0-alpha.1
+Stable tag: 1.0.0-alpha.2
 
 Resource importer for the Platform Co-op Resource Library.
 
@@ -28,6 +28,12 @@ TK.
 TK.
 
 == Changelog ==
+
+= 1.0.0-alpha.2 =
+
+**Minor Changes**
+
+* Import resource rights (resolves #47): #52
 
 = 1.0.0-alpha.1 =
 * First release.

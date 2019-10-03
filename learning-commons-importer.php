@@ -3,7 +3,7 @@
  * Plugin Name: Learning Commons Importer
  * Plugin URI: https://github.com/platform-coop-toolkit/learning-commons-importer/
  * Description: Resource importer for the Platform Co-op Resource Library.
- * Version: 1.0.0-alpha.1
+ * Version: 1.0.0-alpha.2
  * Author: Platform Cooperative Development Kit
  * Author URI:  https://github.com/platform-coop-toolkit/
  * Text Domain: learning-commons-importer
@@ -13,7 +13,7 @@
  */
 
 // Useful global constants.
-define( 'LEARNING_COMMONS_IMPORTER_VERSION', '1.0.0-alpha.1' );
+define( 'LEARNING_COMMONS_IMPORTER_VERSION', '1.0.0-alpha.2' );
 define( 'LEARNING_COMMONS_IMPORTER_URL', plugin_dir_url( __FILE__ ) );
 define( 'LEARNING_COMMONS_IMPORTER_PATH', plugin_dir_path( __FILE__ ) );
 define( 'LEARNING_COMMONS_IMPORTER_INC', LEARNING_COMMONS_IMPORTER_PATH . 'includes/' );
