@@ -15,6 +15,8 @@ use \PhpOffice\PhpSpreadsheet\Worksheet\RowIterator;
  * Class which handles the resource importer.
  */
 class Importer {
+
+
 	/**
 	 * An array of column headings from the import source spreadsheet.
 	 *
@@ -174,7 +176,7 @@ class Importer {
 		// Log the data as debug info too.
 		$data = $error->get_error_data();
 		if ( ! empty( $data ) ) {
-			$this->logger->debug( var_export( $data, true ) ); // @codingStandardsIgnoreLine
+			$this->logger->debug(var_export($data, true)); // @codingStandardsIgnoreLine
 		}
 	}
 
@@ -415,7 +417,11 @@ class Importer {
 							}
 							break;
 						case 'Rights':
-							// TODO: Handle licensing. @see https://github.com/platform-coop-toolkit/learning-commons-framework/issues/5
+							$rights = $this->map_rights( $this->convert_string_encoding( $val ) );
+							$meta[] = [
+								'key'   => 'lc_resource_rights',
+								'value' => $rights,
+							];
 							break;
 						case 'Manual Tags':
 						case 'Automatic Tags':
@@ -483,7 +489,7 @@ class Importer {
 				)
 			);
 
-			do_action( 'resource_importer.process_skipped.resource', $data ); // @codingStandardsIgnoreLine
+			do_action('resource_importer.process_skipped.resource', $data); // @codingStandardsIgnoreLine
 
 			return false;
 		}
@@ -500,7 +506,7 @@ class Importer {
 				)
 			);
 
-			do_action( 'resource_importer.process_already_imported.resource', $data ); // @codingStandardsIgnoreLine
+			do_action('resource_importer.process_already_imported.resource', $data); // @codingStandardsIgnoreLine
 
 			return false;
 		}
@@ -535,7 +541,7 @@ class Importer {
 			);
 			$this->logger->debug( $post_id->get_error_message() );
 
-			do_action( 'resource_importer.process_failed.resource', $post_id, $data, $meta, $terms ); // @codingStandardsIgnoreLine
+			do_action('resource_importer.process_failed.resource', $post_id, $data, $meta, $terms); // @codingStandardsIgnoreLine
 			return false;
 		}
 
@@ -581,7 +587,7 @@ class Importer {
 
 		$this->process_post_meta( $meta, $post_id, $data );
 
-		do_action( 'resource_importer.processed.resource', $post_id, $data, $meta, $terms ); // @codingStandardsIgnoreLine
+		do_action('resource_importer.processed.resource', $post_id, $data, $meta, $terms); // @codingStandardsIgnoreLine
 	}
 
 	/**
@@ -654,7 +660,7 @@ class Importer {
 		 * @param array $data Term data. (Return empty to skip.)
 		 * @param array $meta Meta data.
 		 */
-		$data = apply_filters( 'resource_importer.pre_process.term', $data ); // @codingStandardsIgnoreLine
+		$data = apply_filters('resource_importer.pre_process.term', $data); // @codingStandardsIgnoreLine
 		if ( empty( $data ) ) {
 			return false;
 		}
@@ -676,7 +682,7 @@ class Importer {
 			 *
 			 * @param array $data Raw data imported for the term.
 			 */
-			do_action( 'resource_importer.process_already_imported.term', $data ); // @codingStandardsIgnoreLine
+			do_action('resource_importer.process_already_imported.term', $data); // @codingStandardsIgnoreLine
 
 			$this->mapping['term'][ $mapping_key ] = $existing;
 			return false;
@@ -720,7 +726,7 @@ class Importer {
 			 * @param array $data Raw data imported for the term.
 			 * @param array $meta Meta data supplied for the term.
 			 */
-			do_action( 'resource_importer.process_failed.term', $result, $data ); // @codingStandardsIgnoreLine
+			do_action('resource_importer.process_failed.term', $result, $data); // @codingStandardsIgnoreLine
 			return false;
 		}
 
@@ -744,7 +750,7 @@ class Importer {
 		 * @param int $term_id New term ID.
 		 * @param array $data Raw data imported for the term.
 		 */
-		do_action( 'resource_importer.processed.term', $term_id, $data ); // @codingStandardsIgnoreLine
+		do_action('resource_importer.processed.term', $term_id, $data); // @codingStandardsIgnoreLine
 	}
 
 	/**
@@ -814,7 +820,7 @@ class Importer {
 
 		$query  = "SELECT t.term_id, tt.taxonomy, t.slug FROM {$wpdb->terms} AS t";
 		$query .= " JOIN {$wpdb->term_taxonomy} AS tt ON t.term_id = tt.term_id";
-		$terms  = $wpdb->get_results( $query ); // @codingStandardsIgnoreLine
+		$terms  = $wpdb->get_results($query); // @codingStandardsIgnoreLine
 
 		foreach ( $terms as $item ) {
 			$exists_key                          = sha1( $item->taxonomy . ':' . $item->slug );
@@ -934,5 +940,44 @@ class Importer {
 			default:
 				return 'articles';
 		}
+	}
+
+	/**
+	 * Map rights from Excel to resource rights field.
+	 *
+	 * @param string $rights The rights as indicated in the Excel sheet.
+	 *
+	 * @return string The mapped rights value.
+	 */
+	protected function map_rights( $rights ) {
+		$rights = strtolower( $rights );
+		if ( strpos( $rights, 'attribution-noncommercial-sharealike' ) || strpos( $rights, 'by-nc-sa' ) ) {
+			return 'cc-by-nc-sa';
+		}
+		if ( strpos( $rights, 'attribution-noncommercial-noderivatives' ) || strpos( $rights, 'by-nc-nd' ) ) {
+			return 'cc-by-nc-nd';
+		}
+		if ( strpos( $rights, 'attribution-sharealike' ) || strpos( $rights, 'by-sa' ) ) {
+			return 'cc-by-sa';
+		}
+		if ( strpos( $rights, 'attribution-noderivatives' ) || strpos( $rights, 'by-nd' ) ) {
+			return 'cc-by-nd';
+		}
+		if ( strpos( $rights, 'attribution-noncommercial' ) || strpos( $rights, 'by-nc' ) ) {
+			return 'cc-by-nc';
+		}
+		if ( strpos( $rights, 'attribution' ) || strpos( $rights, 'by' ) ) {
+			return 'cc-by';
+		}
+		if ( strpos( $rights, 'educational community license' ) || strpos( $rights, 'ecl' ) ) {
+			return 'ecl';
+		}
+		if ( strpos( $rights, 'no rights reserved' ) || strpos( $rights, 'zero' ) || strpos( $rights, 'cc0' ) ) {
+			return 'cc0';
+		}
+		if ( strpos( $rights, 'public domain' ) || strpos( $rights, 'no known copyright' ) ) {
+			return 'public-domain';
+		}
+		return 'all-rights-reserved';
 	}
 }
