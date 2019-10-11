@@ -310,6 +310,10 @@ class Importer {
 								'key'   => 'lc_resource_publication_year',
 								'value' => absint( $val ),
 							];
+							$meta[] = [
+								'key'   => 'lc_resource_publication_date',
+								'value' => absint( $val ),
+							];
 							break;
 						case 'Author':
 							$val = explode( '; ', $val );
@@ -365,6 +369,10 @@ class Importer {
 								$meta[] = [
 									'key'   => 'lc_resource_publication_day',
 									'value' => Date::excelToDateTimeObject( $val )->format( 'd' ),
+								];
+								$meta[] = [
+									'key'   => 'lc_resource_publication_date',
+									'value' => Date::excelToDateTimeObject( $val )->format( 'Y-m-d' ),
 								];
 							}
 							break;
