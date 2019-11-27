@@ -923,22 +923,22 @@ class Importer {
 			case 'audioRecording':
 				return 'audio';
 			case 'caseStudy':
-				return 'case-studies';
+				return 'case-study';
 			case 'game':
-				return 'toolkits';
+				return 'toolkit';
 			case 'conferencePaper':
 			case 'journalArticle':
 			case 'thesis':
-				return 'academic-papers';
+				return 'academic-paper';
 			case 'podcast':
-				return 'podcasts';
+				return 'podcast';
 			case 'videoRecording':
-				return 'videos';
+				return 'video';
 			case 'book':
 			case 'bookSection':
-				return 'books';
+				return 'book';
 			case 'report':
-				return 'reports';
+				return 'report';
 			case 'presentation':
 				return 'presentation-slides';
 			case 'blogPost':
@@ -946,7 +946,7 @@ class Importer {
 			case 'newspaperArticle':
 			case 'webpage':
 			default:
-				return 'articles';
+				return 'article';
 		}
 	}
 
