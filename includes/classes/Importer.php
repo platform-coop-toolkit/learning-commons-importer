@@ -218,13 +218,13 @@ class Importer {
 	 */
 	protected function convert_string_encoding( $value ) {
 		if ( ! seems_utf8( $value ) ) {
-            if ( function_exists( 'mb_convert_encoding' ) ) {
-                return mb_convert_encoding( $value, 'UTF-8', 'windows-1252' );
-            } elseif ( function_exists( 'iconv' ) ) {
-                return iconv( 'windows-1252', 'UTF-8', $value );
-            } else {
-                return utf8_encode( $value );
-            }
+			if ( function_exists( 'mb_convert_encoding' ) ) {
+				return mb_convert_encoding( $value, 'UTF-8', 'windows-1252' );
+			} elseif ( function_exists( 'iconv' ) ) {
+				return iconv( 'windows-1252', 'UTF-8', $value );
+			} else {
+				return utf8_encode( $value );
+			}
 		}
 
 		return $value;
@@ -246,7 +246,7 @@ class Importer {
 			[
 				'key'   => 'lc_resource_publication_date',
 				'value' => '-',
-			]
+			],
 		];
 		$terms = [];
 
@@ -267,7 +267,7 @@ class Importer {
 							}
 							break;
 						case 'Publication Year':
-							$meta[] = [
+							$meta[]  = [
 								'key'   => 'lc_resource_publication_year',
 								'value' => absint( $val ),
 							];
@@ -289,7 +289,7 @@ class Importer {
 							}
 							$i = 0;
 							foreach ( $values as $author ) {
-								if ( $author !== '' ) {
+								if ( '' !== $author ) {
 									$meta[] = [
 										'key'   => "lc_resource_author_${i}_author",
 										'value' => $author,
@@ -340,12 +340,13 @@ class Importer {
 							$data['post_content'] = $this->convert_string_encoding( $val );
 							break;
 						case 'Date':
+							// @codingStandardsIgnoreStart
 							if ( Date::isDateTime( $cell ) ) {
-								$meta[] = [
+								$meta[]  = [
 									'key'   => 'lc_resource_publication_month',
 									'value' => Date::excelToDateTimeObject( $val )->format( 'm' ),
 								];
-								$meta[] = [
+								$meta[]  = [
 									'key'   => 'lc_resource_publication_day',
 									'value' => Date::excelToDateTimeObject( $val )->format( 'd' ),
 								];
@@ -354,6 +355,7 @@ class Importer {
 									'value' => Date::excelToDateTimeObject( $val )->format( 'Y-m-d' ),
 								];
 							}
+							// @codingStandardsIgnoreEnd
 							break;
 						case 'Pages':
 						case 'Num Pages':
@@ -397,8 +399,8 @@ class Importer {
 							];
 							break;
 						case 'Language':
-							$lang      = $this->map_language( $this->convert_string_encoding( $val ) );
-							$meta[]    = [
+							$lang   = $this->map_language( $this->convert_string_encoding( $val ) );
+							$meta[] = [
 								'key'   => 'language',
 								'value' => $lang,
 							];
@@ -420,7 +422,7 @@ class Importer {
 		return compact( 'data', 'meta', 'terms' );
 	}
 
-    /**
+	/**
 	 * Parse a term.
 	 *
 	 * @param string $term     The term slug.
