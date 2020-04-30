@@ -31,18 +31,6 @@ $this->render_header();
 						);
 						?>
 					</li>
-					<li>
-						<span class="dashicons dashicons-category"></span>
-						<?php
-						echo esc_html(
-							sprintf(
-								/* translators: %d: Number of terms when there's only one term (1). %d: Number of terms. */
-								_n( '%d topic', '%d topics', $data->term_count, 'learning-commons-importer' ),
-								$data->term_count
-							)
-						);
-						?>
-					</li>
 				</ul>
 			</div>
 		</div>

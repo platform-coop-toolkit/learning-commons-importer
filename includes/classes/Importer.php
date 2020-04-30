@@ -61,7 +61,6 @@ class Importer {
 			$options,
 			[
 				'prefill_existing_posts' => true,
-				'prefill_existing_terms' => true,
 			]
 		);
 	}
@@ -97,27 +96,11 @@ class Importer {
 	public function get_preliminary_information( $file ) {
 		$spreadsheet = $this->load_spreadsheet( $file );
 		$data        = new ImportInfo();
-		$terms       = [];
 		foreach ( $spreadsheet->getActiveSheet()->getRowIterator() as $row ) {
 			if ( 1 < $row->getRowIndex() ) {
 				$data->resource_count++;
-				foreach ( [ 40, 41 ] as $c ) {
-					$val = $spreadsheet->getActiveSheet()->getCellByColumnAndRow( $c, $row->getRowIndex(), false );
-					if ( $val ) {
-						$val = explode( '; ', $val );
-						if ( is_array( $val ) ) {
-							foreach ( $val as $v ) {
-								$terms[] = $v;
-							}
-						} else {
-							$terms[] = $val;
-						}
-					}
-				}
 			}
 		}
-
-		$data->term_count = count( $terms );
 
 		return $data;
 	}
@@ -151,11 +134,6 @@ class Importer {
 					$this->headings[] = $this->convert_string_encoding( $cell->getValue() );
 				}
 			} elseif ( 1 < $row->getRowIndex() ) {
-				$parsed_topics = $this->parse_row_terms( $spreadsheet, $row );
-				foreach ( $parsed_topics as $topic ) {
-					$term = $this->parse_term( $topic, 'lc_topic' );
-					$this->process_term( $term );
-				}
 				$parsed_post = $this->parse_row_post( $row );
 				$this->process_post( $parsed_post['data'], $parsed_post['meta'], $parsed_post['terms'] );
 			}
@@ -199,11 +177,6 @@ class Importer {
 			$this->prefill_existing_posts();
 		}
 
-		// Prefill existing terms if required.
-		if ( $this->options['prefill_existing_terms'] ) {
-			$this->prefill_existing_terms();
-		}
-
 		/**
 		 * Begin the import.
 		 *
@@ -245,33 +218,6 @@ class Importer {
 	 */
 	protected function convert_string_encoding( $value ) {
 		return mb_convert_encoding( $value, 'Windows-1252', 'UTF-8' );
-	}
-
-	/**
-	 * Parse terms from a post row.
-	 *
-	 * @param \PHPOffice\PHPSpreadsheet\Spreadsheet           $spreadsheet Iterator object for the row.
-	 * @param \PHPOffice\PHPSpreadsheet\Worksheet\RowIterator $row Iterator object for the row.
-	 *
-	 * @return array|WP_Error Term data array on success, error otherwise.
-	 */
-	protected function parse_row_terms( $spreadsheet, $row ) {
-		$terms = [];
-		foreach ( [ 40, 41 ] as $c ) {
-			$val = $spreadsheet->getActiveSheet()->getCellByColumnAndRow( $c, $row->getRowIndex(), false );
-			if ( $val ) {
-				$val = explode( '; ', $val );
-				if ( is_array( $val ) ) {
-					foreach ( $val as $v ) {
-						$terms[] = $this->convert_string_encoding( $v );
-					}
-				} else {
-					$terms[] = $this->convert_string_encoding( $val );
-				}
-			}
-		}
-
-		return $terms;
 	}
 
 	/**
@@ -326,9 +272,25 @@ class Importer {
 								$name     = $parts[1] . ' ' . $parts[0];
 								$values[] = $this->convert_string_encoding( $name );
 							}
+							$i = 0;
+							foreach ( $values as $author ) {
+								$meta[] = [
+									'key'   => "lc_resource_author_${i}_author",
+									'value' => $author,
+								];
+								$meta[] = [
+									'key'   => "_lc_resource_author_${i}_author",
+									'value' => 'field_5e56edce93658',
+								];
+								$i++;
+							}
 							$meta[] = [
 								'key'   => 'lc_resource_author',
-								'value' => $values,
+								'value' => $i + 1,
+							];
+							$meta[] = [
+								'key'   => '_lc_resource_author',
+								'value' => 'field_5e56ed9c93657',
 							];
 							break;
 						case 'Title':
@@ -419,10 +381,10 @@ class Importer {
 							break;
 						case 'Language':
 							$lang      = $this->map_language( $this->convert_string_encoding( $val ) );
-							$term_item = $this->parse_term( $lang, 'language' );
-							if ( ! empty( $term_item ) ) {
-								$terms[] = $term_item;
-							}
+							$meta[]    = [
+								'key'   => 'language',
+								'value' => $lang,
+							];
 							break;
 						case 'Rights':
 							$rights = $this->map_rights( $this->convert_string_encoding( $val ) );
@@ -430,19 +392,6 @@ class Importer {
 								'key'   => 'lc_resource_rights',
 								'value' => $rights,
 							];
-							break;
-						case 'Manual Tags':
-						case 'Automatic Tags':
-							$val = explode( '; ', $val );
-							if ( ! is_array( $val ) ) {
-								$val = [ $val ];
-							}
-							foreach ( $val as $v ) {
-								$term_item = $this->parse_term( $this->convert_string_encoding( $v ), 'lc_topic' );
-								if ( ! empty( $term_item ) ) {
-									$terms[] = $term_item;
-								}
-							}
 							break;
 					}
 				}
@@ -452,6 +401,23 @@ class Importer {
 		}
 
 		return compact( 'data', 'meta', 'terms' );
+	}
+
+    /**
+	 * Parse a term.
+	 *
+	 * @param string $term     The term slug.
+	 * @param string $taxonomy The term's taxonomy.
+	 *
+	 * @return array An array of term data.
+	 */
+	protected function parse_term( $term, $taxonomy ) {
+		$data = [
+			'name'     => $term,
+			'slug'     => sanitize_title( $term ),
+			'taxonomy' => $taxonomy,
+		];
+		return $data;
 	}
 
 	/**
@@ -565,34 +531,6 @@ class Importer {
 			)
 		);
 
-		// Handle the terms too
-		$terms = apply_filters( 'wp_import_post_terms', $terms, $post_id, $data );
-
-		if ( ! empty( $terms ) ) {
-			$term_ids = [];
-			foreach ( $terms as $term ) {
-				$taxonomy = $term['taxonomy'];
-				$key      = sha1( $taxonomy . ':' . $term['slug'] );
-
-				if ( isset( $this->exists['term'][ $key ] ) ) {
-					$term_ids[ $taxonomy ][] = (int) $this->exists['term'][ $key ];
-				} elseif ( isset( $this->mapping['term'][ $key ] ) ) {
-					$term_ids[ $taxonomy ][] = (int) $this->mapping['term'][ $key ];
-				} else {
-					$meta[]             = [
-						'key'   => '_resource_import_term',
-						'value' => $term,
-					];
-					$requires_remapping = true;
-				}
-			}
-
-			foreach ( $term_ids as $tax => $ids ) {
-				$tt_ids = wp_set_post_terms( $post_id, $ids, $tax );
-				do_action( 'wp_import_set_post_terms', $tt_ids, $ids, $tax, $post_id, $data );
-			}
-		}
-
 		$this->process_post_meta( $meta, $post_id, $data );
 
 		do_action('resource_importer.processed.resource', $post_id, $data, $meta, $terms); // @codingStandardsIgnoreLine
@@ -637,128 +575,6 @@ class Importer {
 		}
 
 		return true;
-	}
-
-	/**
-	 * Parse a term.
-	 *
-	 * @param string $term     The term slug.
-	 * @param string $taxonomy The term's taxonomy.
-	 *
-	 * @return array An array of term data.
-	 */
-	protected function parse_term( $term, $taxonomy ) {
-		$data = [
-			'name'     => $term,
-			'slug'     => sanitize_title( $term ),
-			'taxonomy' => $taxonomy,
-		];
-		return $data;
-	}
-
-	/**
-	 * Create new terms based on import information.
-	 *
-	 * @param array $data Term data.
-	 */
-	protected function process_term( $data ) {
-		/**
-		 * Pre-process term data.
-		 *
-		 * @param array $data Term data. (Return empty to skip.)
-		 * @param array $meta Meta data.
-		 */
-		$data = apply_filters('resource_importer.pre_process.term', $data); // @codingStandardsIgnoreLine
-		if ( empty( $data ) ) {
-			return false;
-		}
-
-		$taxonomy    = get_taxonomy( $data['taxonomy'] );
-		$mapping_key = sha1( $data['taxonomy'] . ':' . $data['slug'] );
-		$existing    = $this->term_exists( $data );
-		if ( $existing ) {
-			$this->logger->info(
-				sprintf(
-					/* Translators: %1$s: Taxonomy name. %2$s: Term name. */
-					__( '%1$s "%2$s" already exists.', 'wordpress-importer' ),
-					$taxonomy->labels->singular_name,
-					$data['name']
-				)
-			);
-			/**
-			 * Term processing already imported.
-			 *
-			 * @param array $data Raw data imported for the term.
-			 */
-			do_action('resource_importer.process_already_imported.term', $data); // @codingStandardsIgnoreLine
-
-			$this->mapping['term'][ $mapping_key ] = $existing;
-			return false;
-		}
-
-		// WP really likes to repeat itself in export files
-		if ( isset( $this->mapping['term'][ $mapping_key ] ) ) {
-			return false;
-		}
-
-		$termdata = [];
-		$allowed  = [
-			'slug' => true,
-		];
-
-		foreach ( $data as $key => $value ) {
-			if ( ! isset( $allowed[ $key ] ) ) {
-				continue;
-			}
-
-			$termdata[ $key ] = $value;
-		}
-
-		$result = wp_insert_term( $data['name'], $data['taxonomy'], $termdata );
-		if ( is_wp_error( $result ) ) {
-			$this->logger->warning(
-				sprintf(
-					/* Translators: %1$s: Taxonomy name. %2$s: Term name. */
-					__( 'Failed to import %1$s "%2$s".', 'wordpress-importer' ),
-					strtolower( $taxonomy->labels->singular_name ),
-					$data['name']
-				)
-			);
-			$this->logger->debug( $result->get_error_message() );
-			do_action( 'wp_import_insert_term_failed', $result, $data );
-
-			/**
-			 * Term processing failed.
-			 *
-			 * @param WP_Error $result Error object.
-			 * @param array $data Raw data imported for the term.
-			 * @param array $meta Meta data supplied for the term.
-			 */
-			do_action('resource_importer.process_failed.term', $result, $data); // @codingStandardsIgnoreLine
-			return false;
-		}
-
-		$term_id                               = $result['term_id'];
-		$this->mapping['term'][ $mapping_key ] = $term_id;
-
-		$this->logger->info(
-			sprintf(
-				/* Translators: %1$s: Term name. %2$s: Taxonomy name. */
-				__( 'Imported "%1$s" (%2$s)', 'wordpress-importer' ),
-				$data['name'],
-				$taxonomy->labels->singular_name
-			)
-		);
-
-		do_action( 'wp_import_insert_term', $term_id, $data );
-
-		/**
-		 * Term processing completed.
-		 *
-		 * @param int $term_id New term ID.
-		 * @param array $data Raw data imported for the term.
-		 */
-		do_action('resource_importer.processed.term', $term_id, $data); // @codingStandardsIgnoreLine
 	}
 
 	/**
@@ -819,96 +635,51 @@ class Importer {
 	}
 
 	/**
-	 * Prefill existing term data.
-	 *
-	 * @see self::prefill_existing_posts() for justification of why this exists.
-	 */
-	protected function prefill_existing_terms() {
-		global $wpdb;
-
-		$query  = "SELECT t.term_id, tt.taxonomy, t.slug FROM {$wpdb->terms} AS t";
-		$query .= " JOIN {$wpdb->term_taxonomy} AS tt ON t.term_id = tt.term_id";
-		$terms  = $wpdb->get_results($query); // @codingStandardsIgnoreLine
-
-		foreach ( $terms as $item ) {
-			$exists_key                          = sha1( $item->taxonomy . ':' . $item->slug );
-			$this->exists['term'][ $exists_key ] = $item->term_id;
-		}
-	}
-
-	/**
-	 * Does the term exist?
-	 *
-	 * @param array $data Term data to check against.
-	 * @return int|bool Existing term ID if it exists, false otherwise.
-	 */
-	protected function term_exists( $data ) {
-		$exists_key = sha1( $data['taxonomy'] . ':' . $data['slug'] );
-
-		// Constant-time lookup if we prefilled
-		if ( $this->options['prefill_existing_terms'] ) {
-			return isset( $this->exists['term'][ $exists_key ] ) ? $this->exists['term'][ $exists_key ] : false;
-		}
-
-		// No prefilling, but might have already handled it
-		if ( isset( $this->exists['term'][ $exists_key ] ) ) {
-			return $this->exists['term'][ $exists_key ];
-		}
-
-		// Still nothing, try comment_exists, and cache it
-		$exists = term_exists( $data['slug'], $data['taxonomy'] );
-		if ( is_array( $exists ) ) {
-			$exists = $exists['term_id'];
-		}
-
-		$this->exists['term'][ $exists_key ] = $exists;
-
-		return $exists;
-	}
-
-	/**
-	 * Mark the term as existing.
-	 *
-	 * @param array $data Term data to mark as existing.
-	 * @param int   $term_id Term ID.
-	 */
-	protected function mark_term_exists( $data, $term_id ) {
-		$exists_key                          = sha1( $data['taxonomy'] . ':' . $data['slug'] );
-		$this->exists['term'][ $exists_key ] = $term_id;
-	}
-
-	/**
 	 * Convert resource language code to Polylang language code.
 	 *
 	 * @param string $lang A language code from the Excel sheet.
 	 *
-	 * @return string $polylang A two-character language code for Polylang.
+	 * @return string $output A two-character language code for the post meta field.
 	 */
 	protected function map_language( $lang ) {
 		$input = strpos( $lang, '-' ) ? explode( '-', $lang )[0] : $lang;
 		switch ( $input ) {
 			case 'ger':
-				$polylang = 'de';
+			case 'de-DE':
+				$output = 'de';
+				break;
+			case 'sv-SE':
+				$output = 'sv';
 				break;
 			case 'spa':
-				$polylang = 'es';
+				$output = 'es';
 				break;
 			case 'fre':
-				$polylang = 'fr';
+			case 'fr-FR':
+				$output = 'fr';
+				break;
+			case 'it-IT':
+				$output = 'it';
 				break;
 			case 'portuguese':
-				$polylang = 'pt';
+			case 'pt-BR':
+				$output = 'pt';
 				break;
+			case '':
 			case 'eng':
 			case 'English':
-				$polylang = 'en';
+			case 'en-US':
+			case 'en-GB':
+			case 'en-AU':
+			case 'en-CAC':
+				$output = 'en';
 				break;
 			default:
-				$polylang = $input;
+				$output = $input;
 				break;
 		}
 
-		return $polylang;
+		return $output;
 	}
 
 	/**
