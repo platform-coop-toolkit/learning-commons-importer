@@ -455,9 +455,6 @@ class ImportUI {
 		add_action( 'resource_importer.process_failed.resource', [ $this, 'imported_resource' ], 10, 2 );
 		add_action( 'resource_importer.process_already_imported.resource', [ $this, 'already_imported_resource' ], 10, 2 );
 		add_action( 'resource_importer.process_skipped.resource', [ $this, 'already_imported_resource' ], 10, 2 );
-		add_action( 'resource_importer.processed.term', [ $this, 'imported_term' ] );
-		add_action( 'resource_importer.process_failed.term', [ $this, 'imported_term' ] );
-		add_action( 'resource_importer.process_already_imported.term', [ $this, 'imported_term' ] );
 
 		// Clean up some memory
 		unset( $settings );
@@ -557,19 +554,6 @@ class ImportUI {
 			[
 				'action' => 'updateDelta',
 				'type'   => 'posts',
-				'delta'  => 1,
-			]
-		);
-	}
-
-	/**
-	 * Send message when a term has been imported.
-	 */
-	public function imported_term() {
-		$this->emit_sse_message(
-			[
-				'action' => 'updateDelta',
-				'type'   => 'terms',
 				'delta'  => 1,
 			]
 		);
