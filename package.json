@@ -57,7 +57,7 @@
     "caniuse-db": "^1.0.30000999",
     "clean-webpack-plugin": "^2.0.2",
     "copy-webpack-plugin": "^5.0.4",
-    "core-js": "^3.3.2",
+    "core-js": "^3.6.5",
     "css-loader": "^3.2.0",
     "cssnano": "^4.1.10",
     "eslint": "^6.8.0",
