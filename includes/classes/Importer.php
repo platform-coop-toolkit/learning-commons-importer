@@ -242,7 +242,12 @@ class Importer {
 			'post_type'   => 'lc_resource',
 			'post_status' => 'pending',
 		];
-		$meta  = [];
+		$meta  = [
+			[
+				'key'   => 'lc_resource_publication_date',
+				'value' => '-',
+			]
+		];
 		$terms = [];
 
 		$cell_iterator = $row->getCellIterator();
@@ -266,7 +271,7 @@ class Importer {
 								'key'   => 'lc_resource_publication_year',
 								'value' => absint( $val ),
 							];
-							$meta[] = [
+							$meta[0] = [
 								'key'   => 'lc_resource_publication_date',
 								'value' => absint( $val ),
 							];
@@ -284,15 +289,17 @@ class Importer {
 							}
 							$i = 0;
 							foreach ( $values as $author ) {
-								$meta[] = [
-									'key'   => "lc_resource_author_${i}_author",
-									'value' => $author,
-								];
-								$meta[] = [
-									'key'   => "_lc_resource_author_${i}_author",
-									'value' => 'field_5e56edce93658',
-								];
-								$i++;
+								if ( $author !== '' ) {
+									$meta[] = [
+										'key'   => "lc_resource_author_${i}_author",
+										'value' => $author,
+									];
+									$meta[] = [
+										'key'   => "_lc_resource_author_${i}_author",
+										'value' => 'field_5e56edce93658',
+									];
+									$i++;
+								}
 							}
 							$meta[] = [
 								'key'   => 'lc_resource_author',
@@ -342,7 +349,7 @@ class Importer {
 									'key'   => 'lc_resource_publication_day',
 									'value' => Date::excelToDateTimeObject( $val )->format( 'd' ),
 								];
-								$meta[] = [
+								$meta[0] = [
 									'key'   => 'lc_resource_publication_date',
 									'value' => Date::excelToDateTimeObject( $val )->format( 'Y-m-d' ),
 								];
