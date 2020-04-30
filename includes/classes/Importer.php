@@ -217,7 +217,17 @@ class Importer {
 	 * @return string The string with converted encoding.
 	 */
 	protected function convert_string_encoding( $value ) {
-		return mb_convert_encoding( $value, 'Windows-1252', 'UTF-8' );
+		if ( ! seems_utf8( $value ) ) {
+            if ( function_exists( 'mb_convert_encoding' ) ) {
+                return mb_convert_encoding( $value, 'UTF-8', 'windows-1252' );
+            } elseif ( function_exists( 'iconv' ) ) {
+                return iconv( 'windows-1252', 'UTF-8', $value );
+            } else {
+                return utf8_encode( $value );
+            }
+		}
+
+		return $value;
 	}
 
 	/**
