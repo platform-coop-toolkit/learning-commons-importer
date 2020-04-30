@@ -1,4 +1,9 @@
 # Changelog #
+## 1.1.0 ##
+**Minor Changes**
+
+*  Update importer (resolves #69): #70
+
 ## 1.0.0 ##
 
 **Minor Changes**

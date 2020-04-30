@@ -3,7 +3,7 @@
  * Plugin Name: Learning Commons Importer
  * Plugin URI: https://github.com/platform-coop-toolkit/learning-commons-importer/
  * Description: Resource importer for the Platform Co-op Resource Library.
- * Version: 1.0.0
+ * Version: 1.1.0
  * Author: Platform Cooperative Development Kit
  * Author URI:  https://github.com/platform-coop-toolkit/
  * Text Domain: learning-commons-importer

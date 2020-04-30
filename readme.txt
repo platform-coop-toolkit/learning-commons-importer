@@ -2,9 +2,9 @@
 Contributors: greatislander
 Tags: excel, import
 Requires PHP: 7.3
-Requires at least: 5.2.4
-Tested up to: 5.3-RC1
-Stable tag: 1.0.0
+Requires at least: 5.4
+Tested up to: 5.4
+Stable tag: 1.1.0
 
 Resource importer for the Platform Co-op Resource Library.
 
@@ -30,6 +30,11 @@ TK.
 TK.
 
 == Changelog ==
+= 1.1.0 =
+**Minor Changes**
+
+*  Update importer (resolves #69): #70
+
 = 1.0.0 =
 
 **Minor Changes**
