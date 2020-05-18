@@ -73,7 +73,7 @@
     "stylelint": "^9.6.0",
     "stylelint-config-wordpress": "^14.0.0",
     "stylelint-declaration-use-variable": "^1.7.2",
-    "stylelint-order": "^3.1.1",
+    "stylelint-order": "^4.0.0",
     "stylelint-webpack-plugin": "^1.2.3",
     "terser": "^4.6.13",
     "webpack": "^4.41.2",
